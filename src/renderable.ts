@@ -4,11 +4,7 @@ export class Renderable {
 
     constructor(vertices: Float32Array, shader: GPUShaderModule | null) {
         this._vertices = vertices;
-        if (!shader) {
-            this._shader = null;
-        } else {
-            this._shader = shader;
-        }
+        this._shader = shader;
     }
 
     get vertices() {
@@ -16,13 +12,6 @@ export class Renderable {
     }
 
     get shader() {
-        return this._shader;
-    }
-
-    public getShader(): GPUShaderModule {
-        if (!this._shader) {
-            throw Error("Undefined shader module.");
-        }
         return this._shader;
     }
 }

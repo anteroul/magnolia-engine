@@ -1,22 +1,25 @@
 import { Renderer } from "./renderer";
 import { Renderable } from "./renderable";
 
-let canvas = document.querySelector("canvas");
-let renderer: Renderer | null = null;
+async function init(): Promise<Renderer> {
+    let canvas = document.querySelector("canvas");
+    let renderer;
+
+    if (canvas) {
+        try {
+            renderer = new Renderer();
+            renderer.init(canvas);
+            renderer.RenderQueue.push(<Renderable> new Renderable(new Float32Array([1, 1, 1]), await renderer.loadShader("./shaders/triangle.wgsl")));
+        } catch (err) {
+            throw new Error("Failed to initialize renderer.");
+        }
+    }
+    return <Renderer> renderer;
+}
 
 function updateGameLoop(ren: Renderer) {
     requestAnimationFrame(ren.render);
-    updateGameLoop(ren);
 }
 
-if (canvas && !renderer) {
-    try {
-        renderer = new Renderer(canvas);
-        renderer.init();
-        renderer.renderQueue.push(new Renderable(new Float32Array([1, 1, 1]), await renderer.loadShader("./shaders/triangle.wgsl")));
-    } catch (err) {
-        console.error("Failed to initialize renderer.", err);
-    }
-} else if (renderer) {
-    updateGameLoop(renderer);
-}
+let renderer = await init();
+updateGameLoop(renderer);
