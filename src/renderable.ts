@@ -12,6 +12,6 @@ export class Renderable {
     }
 
     get shader() {
-        return this._shader;
+        return <GPUShaderModule> this._shader;
     }
 }

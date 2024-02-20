@@ -1,6 +1,37 @@
 import { Renderable } from "./renderable";
 
 const BUFFER_SIZE = 64;
+const SAMPLE_SHADER = `
+struct Fragment {
+    @builtin(position) Position : vec4<f32>,
+    @location(0) Color : vec4<f32>
+};
+
+@vertex
+fn vs_main(@builtin(vertex_index) v_id: u32) -> Fragment {
+    var positions = array<vec2<f32>, 3> (
+        vec2<f32>( 0.0,  0.5),
+        vec2<f32>(-0.5, -0.5),
+        vec2<f32>( 0.5, -0.5)
+    );
+
+    var colors = array<vec3<f32>, 3> (
+        vec3<f32>(1.0, 0.0, 0.0),
+        vec3<f32>(0.0, 1.0, 0.0),
+        vec3<f32>(0.0, 0.0, 1.0)
+    );
+
+    var output : Fragment;
+    output.Position = vec4<f32>(positions[v_id], 0.0, 1.0);
+    output.Color = vec4<f32>(colors[v_id], 1.0);
+
+    return output;
+}
+
+@fragment
+fn fs_main(@location(0) Color: vec4<f32>) -> @location(0) vec4<f32> {
+    return Color;
+}`;
 
 export class Renderer {
     private _ctx: GPUCanvasContext | null;
@@ -42,6 +73,8 @@ export class Renderer {
 
         if (!this._ctx) {
             throw new Error("Undefined context.");
+        } else {
+            console.log("Context: " + this._ctx);
         }
 
         this._textureFormat = navigator.gpu.getPreferredCanvasFormat();
@@ -73,6 +106,9 @@ export class Renderer {
             clearValue: { r: 0, g: 0, b: 0.4, a: 1 },
             storeOp: 'discard',
         };
+
+        this.RenderQueue.push(<Renderable> new Renderable(new Float32Array([1, 1, 1]), this._device.createShaderModule( {code: SAMPLE_SHADER})));
+        this.render(this._ctx, this._device);
     }
 
     setClearColor(_r: number, _g: number, _b: number) {
@@ -87,37 +123,35 @@ export class Renderer {
         }
     }
 
-    render() {
-        if (!this._ctx) {
-            throw new Error("Undefined context.");
+    render(ctx: GPUCanvasContext, device: GPUDevice) {
+        const r = this.RenderQueue.at(-1);
+
+        if (!r) {
+            return;
         }
 
-        if (!this._device) {
-            throw new Error("Undefined device.");
-        }
-
-        this._device.queue.writeBuffer(<GPUBuffer> this._buffer, 0, this.RenderQueue[this._renderIndex].vertices);
-        const encoder = this._device.createCommandEncoder();
+        device.queue.writeBuffer(<GPUBuffer> this._buffer, 0, r.vertices);
+        const encoder = device.createCommandEncoder();
 
         const pass = encoder.beginRenderPass({
             colorAttachments: [{
-                view: this._ctx.getCurrentTexture().createView(),
+                view: ctx.getCurrentTexture().createView(),
                 loadOp: "clear",
                 clearValue: { r: 0, g: 0, b: 0.4, a: 1 },
                 storeOp: "store",
             }]
         });
 
-        const pipeline = this._device.createRenderPipeline({
+        const pipeline = device.createRenderPipeline({
             label: "pipeline",
             layout: "auto",
             vertex: {
-                module: <GPUShaderModule> this.RenderQueue[0].shader,
+                module: r.shader,
                 entryPoint: "vs_main",
                 buffers: [this._bufferLayout]
             },
             fragment: {
-                module: <GPUShaderModule> this.RenderQueue[0].shader,
+                module: r.shader,
                 entryPoint: "fs_main",
                 targets: [{
                     format: <GPUTextureFormat> this._textureFormat
@@ -133,7 +167,7 @@ export class Renderer {
         pass.draw(this.RenderQueue[0].vertices.length);
         pass.end();
 
-        this._device.queue.submit([encoder.finish()]);
+        device.queue.submit([encoder.finish()]);
     }
 
     async loadShader(url: RequestInfo): Promise<GPUShaderModule | null> {
