@@ -1,37 +1,6 @@
 import { Renderable } from "./renderable";
 
 const BUFFER_SIZE = 64;
-const SAMPLE_SHADER = `
-struct Fragment {
-    @builtin(position) Position : vec4<f32>,
-    @location(0) Color : vec4<f32>
-};
-
-@vertex
-fn vs_main(@builtin(vertex_index) v_id: u32) -> Fragment {
-    var positions = array<vec2<f32>, 3> (
-        vec2<f32>( 0.0,  0.5),
-        vec2<f32>(-0.5, -0.5),
-        vec2<f32>( 0.5, -0.5)
-    );
-
-    var colors = array<vec3<f32>, 3> (
-        vec3<f32>(1.0, 0.0, 0.0),
-        vec3<f32>(0.0, 1.0, 0.0),
-        vec3<f32>(0.0, 0.0, 1.0)
-    );
-
-    var output : Fragment;
-    output.Position = vec4<f32>(positions[v_id], 0.0, 1.0);
-    output.Color = vec4<f32>(colors[v_id], 1.0);
-
-    return output;
-}
-
-@fragment
-fn fs_main(@location(0) Color: vec4<f32>) -> @location(0) vec4<f32> {
-    return Color;
-}`;
 
 export class Renderer {
     private _ctx: GPUCanvasContext | null;
@@ -41,8 +10,6 @@ export class Renderer {
     private _buffer: GPUBuffer | null;
     private _bufferLayout: GPUVertexBufferLayout | null;
     private _colorAttachment: GPURenderPassColorAttachment | null;
-    private _renderIndex: number;
-
     public RenderQueue: Array<Renderable> = [];
 
     constructor() {
@@ -53,7 +20,6 @@ export class Renderer {
         this._buffer = null;
         this._bufferLayout = null;
         this._colorAttachment = null;
-        this._renderIndex = 0;
     }
 
     async init(canvas: HTMLCanvasElement) {
@@ -73,8 +39,6 @@ export class Renderer {
 
         if (!this._ctx) {
             throw new Error("Undefined context.");
-        } else {
-            console.log("Context: " + this._ctx);
         }
 
         this._textureFormat = navigator.gpu.getPreferredCanvasFormat();
@@ -106,9 +70,6 @@ export class Renderer {
             clearValue: { r: 0, g: 0, b: 0.4, a: 1 },
             storeOp: 'discard',
         };
-
-        this.RenderQueue.push(<Renderable> new Renderable(new Float32Array([1, 1, 1]), this._device.createShaderModule( {code: SAMPLE_SHADER})));
-        this.render(this._ctx, this._device);
     }
 
     setClearColor(_r: number, _g: number, _b: number) {
@@ -123,8 +84,8 @@ export class Renderer {
         }
     }
 
-    render(ctx: GPUCanvasContext, device: GPUDevice) {
-        const r = this.RenderQueue.at(-1);
+    render(ctx: GPUCanvasContext, device: GPUDevice, index: number) {
+        const r = this.RenderQueue.at(index);
 
         if (!r) {
             return;
@@ -164,18 +125,17 @@ export class Renderer {
 
         pass.setPipeline(pipeline);
         pass.setVertexBuffer(0, this._buffer);
-        pass.draw(this.RenderQueue[0].vertices.length);
+        pass.draw(this.RenderQueue[index].vertices.length);
         pass.end();
 
         device.queue.submit([encoder.finish()]);
     }
 
-    async loadShader(url: RequestInfo): Promise<GPUShaderModule | null> {
-        const response = await fetch(url);
-        const source = await response.text();
-        if (this._device) {
-            return this._device.createShaderModule({ code: source });
-        }
-        return null;
+    get ctx() {
+        return <GPUCanvasContext> this._ctx;
+    }
+
+    get device() {
+        return <GPUDevice> this._device;
     }
 }
