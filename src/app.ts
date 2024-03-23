@@ -1,7 +1,7 @@
 import { Renderable } from "./renderable";
 import { Renderer } from "./renderer";
 
-let renderer = new Renderer();
+let renderer = new Renderer(document.querySelector("canvas"));
 let index = 0;
 
 async function loadShader(url: RequestInfo | URL, device: GPUDevice): Promise<GPUShaderModule> {
@@ -12,15 +12,14 @@ async function loadShader(url: RequestInfo | URL, device: GPUDevice): Promise<GP
 
 function update() {
     if (index < 0) index = renderer.RenderQueue.length;
-    renderer.render(renderer.ctx, renderer.device, index);
+    renderer.render(<GPUCanvasContext> renderer.ctx, renderer.device, index);
     index--;
     requestAnimationFrame(update);
 }
 
 async function init() {
-    let canvas = document.querySelector("canvas");
     try {
-        await renderer.init(<HTMLCanvasElement> canvas);
+        await renderer.init(true);
         renderer.RenderQueue.push(<Renderable> new Renderable(new Float32Array([1, 1, 1]), await loadShader("../src/shaders/triangle.wgsl", renderer.device)));
         //renderer.RenderQueue.push(<Renderable> new Renderable(new Float32Array([1, 1, 1]), await loadShader("../src/shaders/square.wgsl", renderer.device)));
         index = renderer.RenderQueue.length - 1;
