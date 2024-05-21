@@ -1,10 +1,14 @@
+import { Shader } from "./shader";
+
 export class Renderable {
     private _vertices: Float32Array;
-    private _shader: GPUShaderModule | null;
+    private _shader: GPUShaderModule | WebGLShader | undefined;
 
-    constructor(vertices: Float32Array, shader: GPUShaderModule | null) {
+    constructor(vertices: Float32Array, shader: Shader) {
         this._vertices = vertices;
-        this._shader = shader;
+        if (shader.program) {
+            this._shader = shader.program;
+        }
     }
 
     get vertices() {
@@ -13,5 +17,9 @@ export class Renderable {
 
     get shader() {
         return <GPUShaderModule> this._shader;
+    }
+
+    get shaderGL() {
+        return <WebGLShader> this._shader;
     }
 }

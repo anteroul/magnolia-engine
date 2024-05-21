@@ -2,10 +2,16 @@ import { Renderable } from "./renderable";
 
 const BUFFER_SIZE = 64;
 
+export enum API_TYPE {
+    NONE = 0,
+    WGPU = 1,
+    WGL2 = 2,
+};
+
 export class Renderer {
     private _canvas: HTMLCanvasElement;
     private _ctxWGPU: GPUCanvasContext | null;
-    private _ctxGL: WebGLRenderingContext | null;
+    private _ctxGL: WebGL2RenderingContext | null;
     private _adapter: GPUAdapter | null;
     private _textureFormat: GPUTextureFormat | null;
     private _device: GPUDevice | null;
@@ -80,14 +86,16 @@ export class Renderer {
                 // initialization finished
                 return;
             }
+        } else {
+            // WebGL initialization
+            this._ctxGL = this._canvas.getContext("webgl2");
+            // initialization finished
         }
-        // WebGL initialization
-        this._ctxGL = this._canvas.getContext("webgl");
     }
 
     setClearColor(_r: number, _g: number, _b: number) {
-        let ctx = <GPUCanvasContext> this.ctx;
-        if (ctx && this._colorAttachment) {
+        let ctx = <GPUCanvasContext | WebGL2RenderingContext> this.ctx;
+        if (ctx == this._ctxWGPU) {
             this._colorAttachment = {
                 view: ctx.getCurrentTexture().createView(),
                 resolveTarget: undefined,
@@ -95,10 +103,12 @@ export class Renderer {
                 clearValue: { r: _r, g: _g, b: _b, a: 1 },
                 storeOp: 'discard',
             };
+        } else if (ctx == this._ctxGL) {
+            ctx.clearColor(_r, _g, _b, 1);
         }
     }
 
-    render(ctx: GPUCanvasContext, device: GPUDevice, index: number) {
+    renderWGPU(ctx: GPUCanvasContext, device: GPUDevice, index: number) {
         const r = this.RenderQueue.at(index);
 
         if (!r) {
@@ -145,14 +155,48 @@ export class Renderer {
         device.queue.submit([encoder.finish()]);
     }
 
+    renderGL(ctx: WebGL2RenderingContext, index: number) {
+        const r = this.RenderQueue.at(index);
+
+        if (!r) {
+            return;
+        }
+        
+        ctx.clearColor(0, 0, 0.4, 1);
+        ctx.useProgram(r.shaderGL);
+        ctx.bindBuffer(ctx.ARRAY_BUFFER, null);
+        ctx.enable(ctx.DEPTH_TEST);
+        ctx.clear(ctx.COLOR_BUFFER_BIT);
+        ctx.viewport(0,0, this._canvas.width, this._canvas.height);
+        ctx.drawElements(ctx.TRIANGLES, r.vertices.length, ctx.UNSIGNED_SHORT, 0);
+        ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
+    }
+
+    render(ctx: GPUCanvasContext | WebGL2RenderingContext, index: number) {
+        if (ctx === this._ctxWGPU) {
+            this.renderWGPU(ctx, this.device, index);
+        } else if (ctx === this._ctxGL) {
+            this.renderGL(ctx, index);
+        }
+    }
+
     get ctx() {
         if (!this._ctxGL) {
             return <GPUCanvasContext> this._ctxWGPU;
         }
-        return <WebGLRenderingContext> this._ctxGL;
+        return <WebGL2RenderingContext> this._ctxGL;
     }
 
     get device() {
         return <GPUDevice> this._device;
+    }
+
+    get currentAPI() {
+        if (this.ctx === this._ctxWGPU) {
+            return API_TYPE.WGPU;
+        } else if (this.ctx === this._ctxGL) {
+            return API_TYPE.WGL2;
+        }
+        return API_TYPE.NONE;
     }
 }
