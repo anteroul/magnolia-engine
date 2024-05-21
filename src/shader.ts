@@ -12,7 +12,6 @@ export class Shader {
                this._program = this.loadShaderGL(url, ren.ctx);
                break;
             default:
-                this._program = undefined;
                 console.log("ERROR: Unable to create shader program!");
                 break;
         }

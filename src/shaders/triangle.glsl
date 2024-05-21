@@ -1,4 +1,4 @@
-// Vertex shader
+#version 330
 attribute vec3 aPosition;
 
 void main() {
@@ -6,6 +6,7 @@ void main() {
 }
 
 // Fragment shader
+#version 330
 precision mediump float;
 
 void main() {

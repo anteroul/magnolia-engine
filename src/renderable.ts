@@ -1,13 +1,11 @@
-import { Shader } from "./shader";
-
 export class Renderable {
     private _vertices: Float32Array;
     private _shader: GPUShaderModule | WebGLShader | undefined;
 
-    constructor(vertices: Float32Array, shader: Shader) {
+    constructor(vertices: Float32Array, shader: GPUShaderModule | WebGLShader | null) {
         this._vertices = vertices;
-        if (shader.program) {
-            this._shader = shader.program;
+        if (shader) {
+            this._shader = shader;
         }
     }
 
