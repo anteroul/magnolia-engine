@@ -18,12 +18,12 @@ async function loadShader(url: RequestInfo | URL, device: GPUDevice): Promise<GP
 
 async function main() {
     let canvas = document.querySelector("canvas");
+    renderer = new Renderer(canvas, await canvas?.getContext("webgpu"));
 
     try {
-        renderer = new Renderer(canvas, new GPUCanvasContext);
         await renderer.init();
         renderer.RenderQueue.push(<Renderable> new Renderable(new Float32Array([1, 1, 1]), new Shader("../src/shaders/triangle.wgsl", renderer)));
-        //renderer.RenderQueue.push(<Renderable> new Renderable(new Float32Array([1, 1, 1]), await loadShader("../src/shaders/triangle.glsl", renderer.device)));
+        //renderer.RenderQueue.push(<Renderable> new Renderable(new Float32Array([1, 1, 1]), new Shader("../src/shaders/triangle.glsl", renderer)));
         index = renderer.RenderQueue.length - 1;
     } catch (err) {
         throw new Error("Failed to initialize renderer.");

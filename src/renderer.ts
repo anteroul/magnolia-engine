@@ -14,7 +14,7 @@ export class Renderer {
     
     public RenderQueue: Array<Renderable> = [];
 
-    constructor(canvas: HTMLCanvasElement | null, renderMode: GPUCanvasContext | WebGL2RenderingContext | WebGLRenderingContext) {
+    constructor(canvas: HTMLCanvasElement | null, renderMode: any) {
         this._canvas = <HTMLCanvasElement> canvas;
         this._ctx = renderMode;
         this._adapter = null;
@@ -110,7 +110,7 @@ export class Renderer {
     renderWGPU(ctx: GPUCanvasContext, device: GPUDevice, index: number) {
         const r = this.RenderQueue.at(index);
 
-        if (!r || !r.shader) {
+        if (!r) {
             return;
         }
 
@@ -130,12 +130,12 @@ export class Renderer {
             label: "pipeline",
             layout: "auto",
             vertex: {
-                module: r.shader,
+                module: <GPUShaderModule> r.shader,
                 entryPoint: "vs_main",
                 buffers: [this._bufferLayout]
             },
             fragment: {
-                module: r.shader,
+                module: <GPUShaderModule> r.shader,
                 entryPoint: "fs_main",
                 targets: [{
                     format: <GPUTextureFormat> this._textureFormat
