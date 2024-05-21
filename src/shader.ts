@@ -1,19 +1,13 @@
-import { Renderer, API_TYPE } from "./renderer";
+import { Renderer } from "./renderer";
 
 export class Shader {
-    private _program: GPUShaderModule | WebGLShader | undefined;
+    private _program: GPUShaderModule | WebGLShader;
 
     constructor(url: RequestInfo | URL, ren: Renderer) {
-        switch (ren.currentAPI) {
-            case API_TYPE.WGPU:
-                this._program = this.loadShaderWGPU(url, ren.device);
-                break;
-            case API_TYPE.WGL2:
-               this._program = this.loadShaderGL(url, ren.ctx);
-               break;
-            default:
-                console.log("ERROR: Unable to create shader program!");
-                break;
+        if (ren.ctx instanceof GPUCanvasContext) {
+            this._program = this.loadShaderWGPU(url, ren.device);
+        } else {
+            this._program = this.loadShaderGL(url, ren.ctx);
         }
     }
 
@@ -26,7 +20,7 @@ export class Shader {
     async loadShaderGL(url: RequestInfo | URL, gl: WebGL2RenderingContext | any): Promise<WebGLShader | null> {
         const response = await fetch(url);
         const source = await response.text();
-        const [vertexShaderSource, fragmentShaderSource] = source.split("// Fragment shader");
+        const [vertexShaderSource, fragmentShaderSource] = source.split("//Fragment shader");
         
         let vertexShader = gl.createShader(gl.VERTEX_SHADER);
         gl.shaderSource(vertexShader, vertexShaderSource);
