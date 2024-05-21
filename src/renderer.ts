@@ -1,4 +1,5 @@
 import { Renderable } from "./renderable";
+import { ShaderLoader } from "./shader";
 
 const BUFFER_SIZE = 64;
 
@@ -13,6 +14,7 @@ export class Renderer {
     private _colorAttachment: GPURenderPassColorAttachment | Float32Array | null;
     
     public RenderQueue: Array<Renderable> = [];
+    public Shader: ShaderLoader;
 
     constructor(canvas: HTMLCanvasElement | null, renderMode: any) {
         this._canvas = <HTMLCanvasElement> canvas;
@@ -23,6 +25,7 @@ export class Renderer {
         this._buffer = null;
         this._bufferLayout = null;
         this._colorAttachment = null;
+        this.Shader = new ShaderLoader();
     }
 
     async init() {
@@ -130,12 +133,12 @@ export class Renderer {
             label: "pipeline",
             layout: "auto",
             vertex: {
-                module: <GPUShaderModule> r.shader,
+                module: r.shader,
                 entryPoint: "vs_main",
                 buffers: [this._bufferLayout]
             },
             fragment: {
-                module: <GPUShaderModule> r.shader,
+                module: r.shader,
                 entryPoint: "fs_main",
                 targets: [{
                     format: <GPUTextureFormat> this._textureFormat

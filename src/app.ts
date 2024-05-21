@@ -1,6 +1,5 @@
 import { Renderable } from "./renderable";
 import { Renderer } from "./renderer";
-import { Shader } from "./shader";
 
 let renderer: Renderer | null = null;
 let ticks = 0.0;
@@ -22,7 +21,7 @@ async function main() {
 
     try {
         await renderer.init();
-        renderer.RenderQueue.push(<Renderable> new Renderable(new Float32Array([1, 1, 1]), new Shader("../src/shaders/triangle.wgsl", renderer)));
+        renderer.RenderQueue.push(<Renderable> new Renderable(new Float32Array([1, 1, 1]), await renderer.Shader.load("../src/shaders/triangle.wgsl", renderer)));
         //renderer.RenderQueue.push(<Renderable> new Renderable(new Float32Array([1, 1, 1]), new Shader("../src/shaders/triangle.glsl", renderer)));
         index = renderer.RenderQueue.length - 1;
     } catch (err) {

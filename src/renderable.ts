@@ -1,10 +1,8 @@
-import { Shader } from "./shader";
-
 export class Renderable {
     private _vertices: Float32Array;
-    private _shader: Shader;
+    private _shader: GPUShaderModule | WebGLShader;
 
-    constructor(vertices: Float32Array, shader: Shader) {
+    constructor(vertices: Float32Array, shader: GPUShaderModule | WebGLShader) {
         this._vertices = vertices;
         this._shader = shader;
     }
@@ -14,20 +12,16 @@ export class Renderable {
     }
 
     get shader() {
-        if (this._shader.program instanceof GPUShaderModule)
-            return this._shader.program;
-        return null;
+        return <GPUShaderModule> this._shader;
     }
 
     get shaderGL() {
-        if (this._shader.program instanceof WebGLShader)
-            return this._shader.program;
-        return null;
+        return <WebGLShader> this._shader;
     }
 
     // Tell WebGL how to pull out the positions from the position
     // buffer into the vertexPosition attribute.
-    setPositionAttribute(context: WebGL2RenderingContext | WebGLRenderingContext, position: number) {
+    public setPositionAttribute(context: WebGL2RenderingContext | WebGLRenderingContext, position: number) {
         const numComponents = 2; // pull out 2 values per iteration
         const type = context.FLOAT; // the data in the buffer is 32bit floats
         const normalize = false; // don't normalize
@@ -46,7 +40,7 @@ export class Renderable {
         context.enableVertexAttribArray(position);
     }
 
-    setColorAttribute(gl: WebGL2RenderingContext | WebGLRenderingContext, buffers: WebGLBuffer) {
+    public setColorAttribute(gl: WebGL2RenderingContext | WebGLRenderingContext, buffers: WebGLBuffer) {
         const numComponents = 4;
         const type = gl.FLOAT;
         const normalize = false;
