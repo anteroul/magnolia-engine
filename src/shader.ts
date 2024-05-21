@@ -9,6 +9,7 @@ export class Shader {
         } else {
             this._program = this.loadShaderGL(url, ren.ctx);
         }
+        console.log("Shader compiled.");
     }
 
     async loadShaderWGPU(url: RequestInfo | URL, device: GPUDevice): Promise<GPUShaderModule> {
