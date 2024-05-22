@@ -28,14 +28,20 @@ fn fs_main(@location(0) Color: vec4<f32>) -> @location(0) vec4<f32> {
 }`;
 
 export class ShaderLoader {
-    async load(url: RequestInfo | URL, ren: Renderer): Promise<GPUShaderModule | WebGLShader> {
-        let shader: GPUShaderModule | WebGLShader | null = null;
-        if (ren.ctx instanceof GPUCanvasContext) {
-            shader = this.loadShaderWGPU(url, ren.device);
+    private _handle: Renderer;
+
+    constructor(renderer: Renderer) {
+        this._handle = renderer;
+    }
+
+    async load(url: RequestInfo | URL): Promise<GPUShaderModule | WebGLProgram> {
+        let shader: GPUShaderModule | WebGLProgram | null = null;
+        if (this._handle.ctx instanceof GPUCanvasContext) {
+            shader = this.loadShaderWGPU(url, this._handle.device);
         } else {
-            shader = this.loadShaderGL(url, ren.ctx);
+            shader = this.loadShaderGL(url, this._handle.ctx);
         }
-        if (!shader) return ren.device.createShaderModule({code: SAMPLE_SHADER});
+        if (!shader) return this._handle.device.createShaderModule({code: SAMPLE_SHADER});
         return shader;
     }
 
@@ -45,16 +51,28 @@ export class ShaderLoader {
         return device.createShaderModule({ code: source });
     }
 
-    async loadShaderGL(url: RequestInfo | URL, gl: WebGL2RenderingContext | any): Promise<WebGLShader | null> {
+    async loadShaderGL(url: RequestInfo | URL, gl: WebGL2RenderingContext | WebGLRenderingContext): Promise<WebGLProgram | null> {
         const response = await fetch(url);
         const source = await response.text();
         const [vertexShaderSource, fragmentShaderSource] = source.split("//Fragment shader");
         
         let vertexShader = gl.createShader(gl.VERTEX_SHADER);
+
+        if (!vertexShader) {
+            console.log("SHADER_ERROR: Failed to create vertex shader!");
+            return null;
+        }
+        
         gl.shaderSource(vertexShader, vertexShaderSource);
         gl.compileShader(vertexShader);
 
         let fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+
+        if (!fragmentShader) {
+            console.log("SHADER_ERROR: Failed to create fragment shader!");
+            return null;
+        }
+
         gl.shaderSource(fragmentShader, fragmentShaderSource);
         gl.compileShader(fragmentShader);
 
@@ -67,6 +85,8 @@ export class ShaderLoader {
             return shader;
         }
 
+        console.log("SHADER_ERROR: Failed to compile shader program!");
+        gl.deleteProgram(shader);
         return null;
     }
 }

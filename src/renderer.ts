@@ -25,7 +25,7 @@ export class Renderer {
         this._buffer = null;
         this._bufferLayout = null;
         this._colorAttachment = null;
-        this.Shader = new ShaderLoader();
+        this.Shader = new ShaderLoader(this);
     }
 
     async init() {
@@ -133,12 +133,12 @@ export class Renderer {
             label: "pipeline",
             layout: "auto",
             vertex: {
-                module: r.shader,
+                module: <GPUShaderModule> r.shader,
                 entryPoint: "vs_main",
                 buffers: [this._bufferLayout]
             },
             fragment: {
-                module: r.shader,
+                module: <GPUShaderModule> r.shader,
                 entryPoint: "fs_main",
                 targets: [{
                     format: <GPUTextureFormat> this._textureFormat
@@ -163,66 +163,24 @@ export class Renderer {
         if (!r) {
             return;
         }
+        
+        ctx.bufferData(ctx.ARRAY_BUFFER, r.vertices, ctx.STATIC_DRAW);
         // Set background colour
-        this.setClearColor(0, 0, 0.4);
-        ctx.clearDepth(1.0);
-
-        ctx.enable(ctx.DEPTH_TEST);
-        ctx.depthFunc(ctx.LEQUAL);
-        // Clear canvas
-        ctx.clear(ctx.COLOR_BUFFER_BIT);
-
-        const fieldOfView = (45 * Math.PI) / 180; // in radians
-        const aspect = ctx.canvas.width / ctx.canvas.height;
-        const zNear = 0.1;
-        const zFar = 100.0;
-        //const projectionMatrix = mat4.create();
-
-        // NOTE: glmatrix.js always has the first argument
-        // as the destination to receive the result.
-        //mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
-
-        // Set the drawing position to the "identity" point, which is
-        // the center of the scene.
-        //const modelViewMatrix = mat4.create();
-
-        // Now move the drawing position a bit to where we want to
-        // start drawing the square.
-        /*
-        mat4.translate(
-            modelViewMatrix, // destination matrix
-            modelViewMatrix, // matrix to translate
-            [-0.0, 0.0, -6.0],
-        ); // amount to translate
-
-        r.rotate(projectionMatrix, modelViewMatrix, deltaTime, 1.5);
-
-        this.setPositionAttribute(buffers, programInfo);
-        this.setColorAttribute(this.context, buffers, programInfo);
-        this.context.useProgram(programInfo.program);
-
-        this.context.uniformMatrix4fv(
-            programInfo.uniformLocations.projectionMatrix,
-            false,
-            projectionMatrix,
-        );
-        this.context.uniformMatrix4fv(
-            programInfo.uniformLocations.modelViewMatrix,
-            false,
-            modelViewMatrix,
-        );
-        {
-            const offset = 0;
-            const vertexCount = 4;
-            this.context.drawArrays(this.context.TRIANGLE_STRIP, offset, vertexCount);
+        if (this._colorAttachment instanceof Float32Array) {
+            ctx.clearColor(this._colorAttachment[0], this._colorAttachment[1], this._colorAttachment[2], this._colorAttachment[3]);
+        } else {
+            ctx.clearColor(0, 0, 0, 0);
         }
-        */
-        ctx.useProgram(r.shaderGL);
-        ctx.bindBuffer(ctx.ARRAY_BUFFER, null);
-
-        ctx.viewport(0,0, this._canvas.width, this._canvas.height);
-        ctx.drawElements(ctx.TRIANGLES, r.vertices.length, ctx.UNSIGNED_SHORT, 0);
-        ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
+        ctx.clear(ctx.COLOR_BUFFER_BIT);
+        
+        ctx.useProgram(<WebGLProgram> r.shader);
+        ctx.bindBuffer(ctx.ARRAY_BUFFER, this._buffer);
+        
+        const vertexPositionAttribute = ctx.getAttribLocation(r.shader, 'aVertexPosition');
+        ctx.enableVertexAttribArray(vertexPositionAttribute);
+        ctx.vertexAttribPointer(vertexPositionAttribute, 2, ctx.FLOAT, false, 0, 0);
+        
+        ctx.drawArrays(ctx.TRIANGLES, 0, 3);
     }
 
     render(ctx: GPUCanvasContext | WebGL2RenderingContext | WebGLRenderingContext, index: number, deltaTime: number) {
