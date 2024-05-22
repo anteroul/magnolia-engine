@@ -82,6 +82,7 @@ export class ShaderLoader {
             gl.attachShader(shader, vertexShader);
             gl.attachShader(shader, fragmentShader);
             gl.linkProgram(shader);
+            //console.log(gl.getShaderParameter(shader, gl.COMPILE_STATUS));
             return shader;
         }
 

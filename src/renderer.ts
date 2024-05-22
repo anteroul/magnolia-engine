@@ -1,5 +1,6 @@
 import { Renderable } from "./renderable";
 import { ShaderLoader } from "./shader";
+import { mat4 } from "gl-matrix";
 
 const BUFFER_SIZE = 64;
 
@@ -79,7 +80,6 @@ export class Renderer {
                 };
 
                 // initialization finished
-                return;
             }
         } else {
             // WebGL initialization
@@ -94,6 +94,7 @@ export class Renderer {
             this._ctx.clearColor(this._colorAttachment[0], this._colorAttachment[1], this._colorAttachment[2], this._colorAttachment[3]);
             // initialization finished
         }
+        console.log(this.currentAPI + " initialized.");
     }
 
     setClearColor(_r: number, _g: number, _b: number) {
@@ -163,7 +164,8 @@ export class Renderer {
         if (!r) {
             return;
         }
-        
+
+        /*
         ctx.bufferData(ctx.ARRAY_BUFFER, r.vertices, ctx.STATIC_DRAW);
         // Set background colour
         if (this._colorAttachment instanceof Float32Array) {
@@ -181,6 +183,61 @@ export class Renderer {
         ctx.vertexAttribPointer(vertexPositionAttribute, 2, ctx.FLOAT, false, 0, 0);
         
         ctx.drawArrays(ctx.TRIANGLES, 0, 3);
+        */
+
+        const programInfo: WebGLProgram = r.shader;
+
+        ctx.clearColor(0.0, 0.0, 0.2, 1.0);
+        ctx.clearDepth(1.0);
+        ctx.enable(ctx.DEPTH_TEST);
+        ctx.depthFunc(ctx.LEQUAL);
+
+        // Clear canvas.
+        ctx.clear(ctx.COLOR_BUFFER_BIT | ctx.DEPTH_BUFFER_BIT);
+
+        const fieldOfView = (45 * Math.PI) / 180; // in radians
+        const aspect = ctx.canvas.width / ctx.canvas.height;
+        const zNear = 0.1;
+        const zFar = 100.0;
+        const projectionMatrix = mat4.create();
+
+        // NOTE: glmatrix.js always has the first argument
+        // as the destination to receive the result.
+        mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
+
+        // Set the drawing position to the "identity" point, which is
+        // the center of the scene.
+        const modelViewMatrix = mat4.create();
+
+        // Now move the drawing position a bit to where we want to
+        // start drawing the square.
+        mat4.translate(
+            modelViewMatrix, // destination matrix
+            modelViewMatrix, // matrix to translate
+            [-0.0, 0.0, -6.0],
+        ); // amount to translate
+
+        r.rotate(projectionMatrix, modelViewMatrix, deltaTime, 1.5);
+
+        this.setPositionAttribute(ctx, r);
+        this.setColorAttribute(ctx, r);
+        ctx.useProgram(r.shader);
+
+        ctx.uniformMatrix4fv(
+            ctx.getUniformLocation(programInfo, "uProjectionMatrix"),
+            false,
+            projectionMatrix,
+        );
+        ctx.uniformMatrix4fv(
+            ctx.getUniformLocation(programInfo, "uModelViewMatrix"),
+            false,
+            modelViewMatrix,
+        );
+        {
+            const offset = 0;
+            const vertexCount = 4;
+            ctx.drawArrays(ctx.TRIANGLE_STRIP, offset, vertexCount);
+        }
     }
 
     render(ctx: GPUCanvasContext | WebGL2RenderingContext | WebGLRenderingContext, index: number, deltaTime: number) {
@@ -197,5 +254,54 @@ export class Renderer {
 
     get device() {
         return <GPUDevice> this._device;
+    }
+
+    get currentAPI() {
+        if (this.ctx instanceof GPUCanvasContext)
+            return "WebGPU";
+        if (this.ctx instanceof WebGL2RenderingContext)
+            return "WebGL2";
+        if (this.ctx instanceof WebGLRenderingContext)
+            return "WebGL";
+        return "none";
+    }
+
+    setPositionAttribute(ctx: WebGL2RenderingContext | WebGLRenderingContext, r: Renderable) {
+        const numComponents = 2; // pull out 2 values per iteration
+        const type = ctx.FLOAT; // the data in the buffer is 32bit floats
+        const normalize = false; // don't normalize
+        const stride = 0; // how many bytes to get from one set of values to the next
+        // 0 = use type and numComponents above
+        const offset = 0; // how many bytes inside the buffer to start from
+        ctx.bindBuffer(ctx.ARRAY_BUFFER, this._buffer);
+        ctx.bufferData(ctx.ARRAY_BUFFER, r.vertices, ctx.STATIC_DRAW);
+        ctx.vertexAttribPointer(
+            ctx.getAttribLocation(r.shader, "aVertexPosition"),
+            numComponents,
+            type,
+            normalize,
+            stride,
+            offset,
+        );
+        ctx.enableVertexAttribArray(ctx.getAttribLocation(r.shader, "aVertexPosition"));
+    }
+
+    setColorAttribute(ctx: WebGL2RenderingContext | WebGLRenderingContext, r: Renderable) {
+        const numComponents = 4;
+        const type = ctx.FLOAT;
+        const normalize = false;
+        const stride = 0;
+        const offset = 0;
+        ctx.bindBuffer(ctx.ARRAY_BUFFER, this._buffer);
+        ctx.bufferData(ctx.ARRAY_BUFFER, new Float32Array(r.colors), ctx.STATIC_DRAW);
+        ctx.vertexAttribPointer(
+            ctx.getAttribLocation(r.shader, "aVertexColor"),
+            numComponents,
+            type,
+            normalize,
+            stride,
+            offset,
+        );
+        ctx.enableVertexAttribArray(ctx.getAttribLocation(r.shader, "aVertexColor"));
     }
 }

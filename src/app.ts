@@ -17,7 +17,7 @@ async function loadShader(url: RequestInfo | URL, device: GPUDevice): Promise<GP
 
 async function main() {
     let canvas = document.querySelector("canvas");
-    renderer = new Renderer(canvas, await canvas?.getContext("webgl2"));
+    renderer = new Renderer(canvas, canvas?.getContext("webgl2"));
 
     try {
         await renderer.init();
