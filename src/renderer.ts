@@ -76,7 +76,7 @@ export class Renderer {
                     resolveTarget: undefined,
                     loadOp: 'clear',
                     clearValue: { r: 0, g: 0, b: 0.4, a: 1 },
-                    storeOp: 'discard',
+                    storeOp: 'store',
                 };
 
                 // initialization finished
@@ -117,7 +117,7 @@ export class Renderer {
         if (!r) {
             return;
         }
-
+        
         device.queue.writeBuffer(<GPUBuffer> this._buffer, 0, r.vertices);
         const encoder = device.createCommandEncoder();
 
@@ -187,7 +187,7 @@ export class Renderer {
 
         const programInfo: WebGLProgram = r.shader;
 
-        ctx.clearColor(0.0, 0.0, 0.2, 1.0);
+        ctx.clearColor(0.0, 0.0, 0.4, 1.0);
         ctx.clearDepth(1.0);
         ctx.enable(ctx.DEPTH_TEST);
         ctx.depthFunc(ctx.LEQUAL);

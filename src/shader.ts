@@ -8,7 +8,7 @@ struct Fragment {
 @vertex
 fn vs_main(@builtin(vertex_index) v_id: u32) -> Fragment {
     var positions = array<vec2<f32>, 3> (
-        vec2<f32>( 0.0,  0.5),
+        vec2<f32>( -0.5,  0.5),
         vec2<f32>(-0.5, -0.5),
         vec2<f32>( 0.5, -0.5)
     );
@@ -54,6 +54,7 @@ export class ShaderLoader {
     async loadShaderGL(url: RequestInfo | URL, gl: WebGL2RenderingContext | WebGLRenderingContext): Promise<WebGLProgram | null> {
         const response = await fetch(url);
         const source = await response.text();
+        console.log(source);
         const [vertexShaderSource, fragmentShaderSource] = source.split("//Fragment shader");
         
         let vertexShader = gl.createShader(gl.VERTEX_SHADER);
