@@ -45,7 +45,7 @@ export class Renderable {
         projection = mat4.create();
 
         mat4.rotate(
-            view,
+            projection,
             view,
             this._rotation,
             [1, 1, 1]

@@ -5,7 +5,6 @@ let renderer: Renderer | null = null;
 let ticks = 0.0;
 let currentTime = 0.0;
 let deltaTime = 0.0;
-let index = 0;
 
 /*
 async function loadShader(url: RequestInfo | URL, device: GPUDevice): Promise<GPUShaderModule> {
@@ -23,7 +22,6 @@ async function main() {
         await renderer.init();
         renderer.RenderQueue.push(<Renderable> new Renderable(new Float32Array([1, 1, 1]), await renderer.Shader.load("../src/shaders/triangle.wgsl")));
         //renderer.RenderQueue.push(<Renderable> new Renderable(new Float32Array([1, 1, 1]), await renderer.Shader.load("../src/shaders/triangle.glsl")));
-        index = renderer.RenderQueue.length - 1;
     } catch (err) {
         throw new Error("Failed to initialize renderer.");
     }
@@ -37,13 +35,8 @@ function gameLoop() {
     currentTime *= 0.001;
     deltaTime = currentTime - ticks;
     ticks = currentTime;
-    
-    if (index < 0)
-        index = renderer.RenderQueue.length;
-    
-    renderer.render(renderer.ctx, index, deltaTime);
-    index--;
-    
+
+    renderer.render(renderer.ctx, deltaTime);
     requestAnimationFrame(gameLoop);
 }
 

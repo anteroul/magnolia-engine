@@ -104,15 +104,15 @@ export class Renderer {
                 resolveTarget: undefined,
                 loadOp: 'clear',
                 clearValue: { r: _r, g: _g, b: _b, a: 1 },
-                storeOp: 'discard',
+                storeOp: 'store',
             };
         } else {
             this._ctx.clearColor(_r, _g, _b, 1);
         }
     }
 
-    renderWGPU(ctx: GPUCanvasContext, device: GPUDevice, index: number) {
-        const r = this.RenderQueue.at(index);
+    renderWGPU(ctx: GPUCanvasContext, device: GPUDevice) {
+        const r = this.RenderQueue.at(0);
 
         if (!r) {
             return;
@@ -152,38 +152,18 @@ export class Renderer {
 
         pass.setPipeline(pipeline);
         pass.setVertexBuffer(0, <GPUBuffer> this._buffer);
-        pass.draw(this.RenderQueue[index].vertices.length);
+        pass.draw(r.vertices.length);
         pass.end();
 
         device.queue.submit([encoder.finish()]);
     }
 
-    renderGL(ctx: WebGL2RenderingContext | WebGLRenderingContext, index: number, deltaTime: number) {
-        const r = this.RenderQueue.at(index);
+    renderGL(ctx: WebGL2RenderingContext | WebGLRenderingContext, deltaTime: number) {
+        const r = this.RenderQueue.at(0);
 
         if (!r) {
             return;
         }
-
-        /*
-        ctx.bufferData(ctx.ARRAY_BUFFER, r.vertices, ctx.STATIC_DRAW);
-        // Set background colour
-        if (this._colorAttachment instanceof Float32Array) {
-            ctx.clearColor(this._colorAttachment[0], this._colorAttachment[1], this._colorAttachment[2], this._colorAttachment[3]);
-        } else {
-            ctx.clearColor(0, 0, 0, 0);
-        }
-        ctx.clear(ctx.COLOR_BUFFER_BIT);
-        
-        ctx.useProgram(<WebGLProgram> r.shader);
-        ctx.bindBuffer(ctx.ARRAY_BUFFER, this._buffer);
-        
-        const vertexPositionAttribute = ctx.getAttribLocation(r.shader, 'aVertexPosition');
-        ctx.enableVertexAttribArray(vertexPositionAttribute);
-        ctx.vertexAttribPointer(vertexPositionAttribute, 2, ctx.FLOAT, false, 0, 0);
-        
-        ctx.drawArrays(ctx.TRIANGLES, 0, 3);
-        */
 
         const programInfo: WebGLProgram = r.shader;
 
@@ -240,11 +220,11 @@ export class Renderer {
         }
     }
 
-    render(ctx: GPUCanvasContext | WebGL2RenderingContext | WebGLRenderingContext, index: number, deltaTime: number) {
+    render(ctx: GPUCanvasContext | WebGL2RenderingContext | WebGLRenderingContext, deltaTime: number) {
         if (ctx instanceof GPUCanvasContext) {
-            this.renderWGPU(ctx, this.device, index);
+            this.renderWGPU(ctx, this.device);
         } else if (ctx instanceof WebGLRenderingContext || WebGL2RenderingContext) {
-            this.renderGL(ctx, index, deltaTime);
+            this.renderGL(ctx, deltaTime);
         }
     }
 
