@@ -13,9 +13,10 @@ export class Renderer {
     private _buffer: GPUBuffer | WebGLBuffer | null;
     private _bufferLayout: GPUVertexBufferLayout | null;
     private _colorAttachment: GPURenderPassColorAttachment | Float32Array | null;
+    private _bindGroup: GPUBindGroup | null;
     
-    public RenderQueue: Array<Renderable> = [];
-    public Shader: ShaderLoader;
+    public assets: Array<Renderable> = [];
+    public shader: ShaderLoader;
 
     constructor(canvas: HTMLCanvasElement | null, renderMode: any) {
         this._canvas = <HTMLCanvasElement> canvas;
@@ -26,7 +27,8 @@ export class Renderer {
         this._buffer = null;
         this._bufferLayout = null;
         this._colorAttachment = null;
-        this.Shader = new ShaderLoader(this);
+        this._bindGroup = null;
+        this.shader = new ShaderLoader(this);
     }
 
     async init() {
@@ -58,8 +60,8 @@ export class Renderer {
                 });
 
                 this._buffer = this._device.createBuffer({
-                    size: BUFFER_SIZE,
-                    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+                    size: BUFFER_SIZE * 3,
+                    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
                 });
                 
                 this._bufferLayout = {
@@ -78,6 +80,28 @@ export class Renderer {
                     clearValue: { r: 0, g: 0, b: 0.4, a: 1 },
                     storeOp: 'store',
                 };
+
+                const bindGroupLayout = this.device.createBindGroupLayout({
+                    entries: [
+                        {
+                            binding: 0,
+                            visibility: GPUShaderStage.VERTEX,
+                            buffer: {}
+                        }
+                    ]
+                });
+            
+                this._bindGroup = this.device.createBindGroup({
+                    layout: bindGroupLayout,
+                    entries: [
+                        {
+                            binding: 0,
+                            resource: {
+                                buffer: <GPUBuffer> this._buffer
+                            }
+                        }
+                    ]
+                });        
 
                 // initialization finished
             }
@@ -111,14 +135,25 @@ export class Renderer {
         }
     }
 
-    renderWGPU(ctx: GPUCanvasContext, device: GPUDevice) {
-        const r = this.RenderQueue.at(0);
+    renderWGPU(ctx: GPUCanvasContext, device: GPUDevice, buffer: GPUBuffer, deltaTime: number) {
+        const r = this.assets.at(0);
 
         if (!r) {
             return;
         }
-        
-        device.queue.writeBuffer(<GPUBuffer> this._buffer, 0, r.vertices);
+
+        const projection = mat4.create();
+        mat4.perspective(projection, Math.PI/4, this._canvas.width/this._canvas.height, 0.1, 10);
+
+        const view = mat4.create();
+        mat4.lookAt(view, [-2, 0, 2], [0, 0, 0], [0, 0, 1]);
+
+        const model = mat4.create();
+        mat4.rotate(model, model, deltaTime, [0, 0, 1]);
+
+        device.queue.writeBuffer(buffer, 0, <ArrayBuffer>model); 
+        device.queue.writeBuffer(buffer, 64, <ArrayBuffer>view); 
+        device.queue.writeBuffer(buffer, 128, <ArrayBuffer>projection); 
         const encoder = device.createCommandEncoder();
 
         const pass = encoder.beginRenderPass({
@@ -151,7 +186,8 @@ export class Renderer {
         });
 
         pass.setPipeline(pipeline);
-        pass.setVertexBuffer(0, <GPUBuffer> this._buffer);
+        pass.setVertexBuffer(0, <GPUBuffer> r.buffer);
+        pass.setBindGroup(0, this._bindGroup);
         pass.draw(r.vertices.length);
         pass.end();
 
@@ -159,7 +195,7 @@ export class Renderer {
     }
 
     renderGL(ctx: WebGL2RenderingContext | WebGLRenderingContext, deltaTime: number) {
-        const r = this.RenderQueue.at(0);
+        const r = this.assets.at(0);
 
         if (!r) {
             return;
@@ -220,11 +256,11 @@ export class Renderer {
         }
     }
 
-    render(ctx: GPUCanvasContext | WebGL2RenderingContext | WebGLRenderingContext, deltaTime: number) {
-        if (ctx instanceof GPUCanvasContext) {
-            this.renderWGPU(ctx, this.device);
-        } else if (ctx instanceof WebGLRenderingContext || WebGL2RenderingContext) {
-            this.renderGL(ctx, deltaTime);
+    render(deltaTime: number) {
+        if (this.ctx instanceof GPUCanvasContext) {
+            this.renderWGPU(this.ctx, this.device, <GPUBuffer> this._buffer, deltaTime);
+        } else if (this.ctx instanceof WebGLRenderingContext || WebGL2RenderingContext) {
+            this.renderGL(this.ctx, deltaTime);
         }
     }
 

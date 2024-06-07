@@ -20,8 +20,8 @@ async function main() {
 
     try {
         await renderer.init();
-        renderer.RenderQueue.push(<Renderable> new Renderable(new Float32Array([1, 1, 1]), await renderer.Shader.load("../src/shaders/triangle.wgsl")));
-        //renderer.RenderQueue.push(<Renderable> new Renderable(new Float32Array([1, 1, 1]), await renderer.Shader.load("../src/shaders/triangle.glsl")));
+        renderer.assets.push(<Renderable> new Renderable(renderer, new Float32Array([1, 1, 1]), await renderer.shader.load("../src/shaders/triangle.wgsl")));
+        //renderer.assets.push(<Renderable> new Renderable(renderer, new Float32Array([1, 1, 1]), await renderer.shader.load("../src/shaders/triangle.glsl")));
     } catch (err) {
         throw new Error("Failed to initialize renderer.");
     }
@@ -36,7 +36,7 @@ function gameLoop() {
     deltaTime = currentTime - ticks;
     ticks = currentTime;
 
-    renderer.render(renderer.ctx, deltaTime);
+    renderer.render(deltaTime);
     requestAnimationFrame(gameLoop);
 }
 
