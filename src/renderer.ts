@@ -1,8 +1,6 @@
-import { Renderable } from "./renderable";
-import { ShaderLoader } from "./shader";
-import { mat4 } from "gl-matrix";
-
-const BUFFER_SIZE = 64;
+import { ShaderLoader } from "./shader_loader";
+import { vec2, vec4 } from "gl-matrix";
+import { Triangle } from "./triangle";
 
 export class Renderer {
     private _canvas: HTMLCanvasElement;
@@ -10,12 +8,12 @@ export class Renderer {
     private _adapter: GPUAdapter | null;
     private _textureFormat: GPUTextureFormat | null;
     private _device: GPUDevice | null;
-    private _buffer: GPUBuffer | WebGLBuffer | null;
-    private _bufferLayout: GPUVertexBufferLayout | null;
     private _colorAttachment: GPURenderPassColorAttachment | Float32Array | null;
-    private _bindGroup: GPUBindGroup | null;
+    private _encoder?: GPUCommandEncoder;
     
-    public assets: Array<Renderable> = [];
+    public buffer?: GPUBuffer 
+    public geometry?: any[];
+    public canvasToSizeMap = new WeakMap();
     public shader: ShaderLoader;
 
     constructor(canvas: HTMLCanvasElement | null, renderMode: any) {
@@ -24,10 +22,7 @@ export class Renderer {
         this._adapter = null;
         this._textureFormat = null;
         this._device = null;
-        this._buffer = null;
-        this._bufferLayout = null;
         this._colorAttachment = null;
-        this._bindGroup = null;
         this.shader = new ShaderLoader(this);
     }
 
@@ -58,50 +53,21 @@ export class Renderer {
                     device: <GPUDevice> this._device,
                     format: this._textureFormat
                 });
-
-                this._buffer = this._device.createBuffer({
-                    size: BUFFER_SIZE * 3,
-                    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-                });
                 
-                this._bufferLayout = {
-                    arrayStride: 0,
-                    attributes: [{
-                        format: "float32x2",
-                        offset: 0,
-                        shaderLocation: 0,
-                    }],
-                };
-
                 this._colorAttachment = {
                     view: this._ctx.getCurrentTexture().createView(),
                     resolveTarget: undefined,
                     loadOp: 'clear',
-                    clearValue: { r: 0, g: 0, b: 0.4, a: 1 },
+                    clearValue: { r: 0, g: 0, b: 0, a: 1 },
                     storeOp: 'store',
                 };
 
-                const bindGroupLayout = this.device.createBindGroupLayout({
-                    entries: [
-                        {
-                            binding: 0,
-                            visibility: GPUShaderStage.VERTEX,
-                            buffer: {}
-                        }
-                    ]
-                });
-            
-                this._bindGroup = this.device.createBindGroup({
-                    layout: bindGroupLayout,
-                    entries: [
-                        {
-                            binding: 0,
-                            resource: {
-                                buffer: <GPUBuffer> this._buffer
-                            }
-                        }
-                    ]
-                });        
+                const objectBufferDescriptor: GPUBufferDescriptor = {
+                    size: 64 * 1024,
+                    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+                };
+
+                this.buffer = this._device.createBuffer(objectBufferDescriptor);
 
                 // initialization finished
             }
@@ -112,8 +78,6 @@ export class Renderer {
                 this._ctx = <WebGLRenderingContext> this._canvas.getContext("webgl");
             }
 
-            this._buffer = <WebGLBuffer> this._ctx.createBuffer();
-            this._ctx.bindBuffer(this._ctx.ARRAY_BUFFER, this._buffer);
             this._colorAttachment = <Float32Array> new Float32Array([0, 0, 0.4, 1]);
             this._ctx.clearColor(this._colorAttachment[0], this._colorAttachment[1], this._colorAttachment[2], this._colorAttachment[3]);
             // initialization finished
@@ -135,6 +99,25 @@ export class Renderer {
         }
     }
 
+    resizeCanvasToDisplaySize() {
+        const canvas = this._canvas;
+        // Get the canvas's current display size
+        let { width, height } = this.canvasToSizeMap.get(canvas) || canvas;
+    
+        // Make sure it's valid for WebGPU
+        width = Math.max(1, Math.min(width, this.device.limits.maxTextureDimension2D));
+        height = Math.max(1, Math.min(height, this.device.limits.maxTextureDimension2D));
+    
+        // Only if the size is different, set the canvas size
+        const needResize = canvas.width !== width || canvas.height !== height;
+        if (needResize) {
+          canvas.width = width;
+          canvas.height = height;
+        }
+        return needResize;
+      }
+
+    /*
     renderWGPU(ctx: GPUCanvasContext, device: GPUDevice, buffer: GPUBuffer, deltaTime: number) {
         const r = this.assets.at(0);
 
@@ -255,13 +238,32 @@ export class Renderer {
             ctx.drawArrays(ctx.TRIANGLE_STRIP, offset, vertexCount);
         }
     }
+    */
 
-    render(deltaTime: number) {
-        if (this.ctx instanceof GPUCanvasContext) {
-            this.renderWGPU(this.ctx, this.device, <GPUBuffer> this._buffer, deltaTime);
-        } else if (this.ctx instanceof WebGLRenderingContext || WebGL2RenderingContext) {
-            this.renderGL(this.ctx, deltaTime);
+    beginDrawing() {
+        if (this.currentAPI === "WebGPU") {
+            this._encoder = this.device.createCommandEncoder();
+        } else {
+            const ctx = <WebGL2RenderingContext | WebGLRenderingContext> this.ctx;
+            ctx.clearColor(0.0, 0.0, 0.4, 1.0);
+            ctx.clearDepth(1.0);
         }
+    }
+
+    endDrawing() {
+        if (this.currentAPI === "WebGPU") {
+            const commandBuffer = this._encoder?.finish();
+            this.device.queue.submit([<GPUCommandBuffer> commandBuffer]);
+        } else {
+            const ctx = <WebGL2RenderingContext | WebGLRenderingContext> this.ctx;
+            ctx.clearColor(0.0, 0.0, 0.4, 1.0);
+            ctx.clearDepth(1.0);
+        }
+    }
+
+    drawTriangle(v1: vec2, v2: vec2, v3: vec2, c: vec4) {
+        const triangle = new Triangle(this, new Array<vec2>(v1, v2, v3), c);
+        triangle.draw(this.newPass(), <number> this.geometry?.length);
     }
 
     get ctx() {
@@ -282,6 +284,24 @@ export class Renderer {
         return "none";
     }
 
+    get textureFormat() {
+        return this._textureFormat;
+    }
+
+    newPass(): GPURenderPassEncoder {
+        const ctx = <GPUCanvasContext> this.ctx;
+
+        return <GPURenderPassEncoder> this._encoder?.beginRenderPass({
+            colorAttachments: [{
+                view: ctx.getCurrentTexture().createView(),
+                loadOp: "clear",
+                clearValue: { r: 0, g: 0, b: 0, a: 1 },
+                storeOp: "store",
+            }]
+        });
+    }
+
+    /*
     setPositionAttribute(ctx: WebGL2RenderingContext | WebGLRenderingContext, r: Renderable) {
         const numComponents = 2; // pull out 2 values per iteration
         const type = ctx.FLOAT; // the data in the buffer is 32bit floats
@@ -319,5 +339,5 @@ export class Renderer {
             offset,
         );
         ctx.enableVertexAttribArray(ctx.getAttribLocation(r.shader, "aVertexColor"));
-    }
+    }*/
 }

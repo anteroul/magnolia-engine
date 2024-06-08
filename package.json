@@ -1,6 +1,6 @@
 {
   "name": "webgpu-renderer",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "WebGPU/WebGL Benchmarking Tool",
   "main": "index.js",
   "scripts": {

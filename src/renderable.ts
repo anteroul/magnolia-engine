@@ -18,7 +18,7 @@ export class Renderable {
         this._vertices = vertices;
         this._shader = shader;
 
-        if (shader instanceof GPUShaderModule) {
+        if (handle.currentAPI === "WebGPU") {
             const usage: GPUBufferUsageFlags = GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST;
 
             const descriptor: GPUBufferDescriptor = {
