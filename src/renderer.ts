@@ -10,11 +10,12 @@ export class Renderer {
     private _device: GPUDevice | null;
     private _colorAttachment: GPURenderPassColorAttachment | Float32Array | null;
     private _encoder?: GPUCommandEncoder;
+    private _shader?: GPUShaderModule;
     
-    public buffer?: GPUBuffer 
-    public geometry?: any[];
+    public buffer?: GPUBuffer;
     public canvasToSizeMap = new WeakMap();
-    public shader: ShaderLoader;
+    public shaderLoader: ShaderLoader;
+    public index: number = 0;
 
     constructor(canvas: HTMLCanvasElement | null, renderMode: any) {
         this._canvas = <HTMLCanvasElement> canvas;
@@ -23,7 +24,7 @@ export class Renderer {
         this._textureFormat = null;
         this._device = null;
         this._colorAttachment = null;
-        this.shader = new ShaderLoader(this);
+        this.shaderLoader = new ShaderLoader(this);
     }
 
     async init() {
@@ -68,7 +69,7 @@ export class Renderer {
                 };
 
                 this.buffer = this._device.createBuffer(objectBufferDescriptor);
-
+                this._shader = <GPUShaderModule> <unknown> this.shaderLoader.load("./shaders/triangle.wgsl");
                 // initialization finished
             }
         } else {
@@ -248,6 +249,7 @@ export class Renderer {
             ctx.clearColor(0.0, 0.0, 0.4, 1.0);
             ctx.clearDepth(1.0);
         }
+        this.index = 0;
     }
 
     endDrawing() {
@@ -263,7 +265,8 @@ export class Renderer {
 
     drawTriangle(v1: vec2, v2: vec2, v3: vec2, c: vec4) {
         const triangle = new Triangle(this, new Array<vec2>(v1, v2, v3), c);
-        triangle.draw(this.newPass(), <number> this.geometry?.length);
+        triangle.draw(this.newPass(), this.index);
+        this.index++;
     }
 
     get ctx() {

@@ -1,17 +1,20 @@
 import { vec2, vec4 } from "gl-matrix";
 import { Renderer } from "./renderer";
+import { Renderable } from "./renderable";
 
 const BUFFER_SIZE = 64;
 
-export class Triangle {
+export class Triangle extends Renderable {
   private _vertexBuffer?: GPUBuffer;
   private _vertexShader?: GPUShaderModule;
   private _fragmentShader?: GPUShaderModule;
   private _bufferLayout?: GPUVertexBufferLayout;
   private _pipeline?: GPURenderPipeline;
-  private _bindGroup?: GPUBindGroup
+  private _bindGroup?: GPUBindGroup;
 
   constructor(handle: Renderer, vertices: Array<vec2>, color: vec4) {
+    super(handle);
+
     this._vertexShader = handle.device.createShaderModule({
       label: 'vert',
       code: `
@@ -51,9 +54,6 @@ export class Triangle {
       }],
     };
 
-    handle.geometry?.push(<GPUBuffer> this._vertexBuffer);
-    //handle.device.queue.writeBuffer(<GPUBuffer> handle.buffer, 0, this._vertexBuffer.getMappedRange(), 0, handle.geometry?.length);
-
     this._pipeline = handle.device.createRenderPipeline({
       label: "pipeline",
       layout: "auto",
@@ -73,9 +73,45 @@ export class Triangle {
         topology: "triangle-list",
       }
     });
+
+    this._bindGroup = handle.device.createBindGroup({
+      layout: this._pipeline.getBindGroupLayout(0),
+      entries: [
+        {
+          binding: 0,
+          resource: {
+            buffer: this._vertexBuffer,
+            offset: 0,
+            size: BUFFER_SIZE * 3,
+          },
+        },
+      ],
+    });
   }
 
-  draw(pass: GPURenderPassEncoder, index: number) {
+  setCustomShader(shader: GPUShaderModule) {
+    this._pipeline = this.programHandle?.device.createRenderPipeline({
+      label: "pipeline",
+      layout: "auto",
+      vertex: {
+        module: shader,
+        entryPoint: "vs_main",
+        buffers: [<GPUVertexBufferLayout>this._bufferLayout]
+      },
+      fragment: {
+        module: shader,
+        entryPoint: "fs_main",
+        targets: [{
+          format: <GPUTextureFormat>this.programHandle?.textureFormat
+        }]
+      },
+      primitive: {
+        topology: "triangle-list",
+      }
+    });
+  }
+
+  override draw(pass: GPURenderPassEncoder, index: number) {
     pass.setPipeline(<GPURenderPipeline>this._pipeline);
     pass.setVertexBuffer(0, <GPUBuffer>this._vertexBuffer);
     pass.setBindGroup(0, <GPUBindGroup>this._bindGroup);

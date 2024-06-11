@@ -22,7 +22,7 @@ function gameLoop() {
     
     renderer.beginDrawing();
     renderer.drawTriangle([0, 0.5], [-0.5, -0.5], [0.5, -0.5], [1, 0, 0, 1]);
-    //renderer.drawTriangle([0, 0.4], [-0.4, -0.4], [0.4, -0.4], [0, 1, 0, 1]);
+    renderer.drawTriangle([0, 0.4], [-0.4, -0.4], [0.4, -0.4], [0, 1, 0, 1]);
     renderer.endDrawing();
     requestAnimationFrame(gameLoop);
 }
