@@ -9,7 +9,7 @@ export class Renderer {
     private _device: GPUDevice | null;
     
     public RenderQueue: Array<Renderable> = [];
-    public Shader: ShaderLoader;
+    public ShaderLoader: ShaderLoader;
 
     constructor(canvas: HTMLCanvasElement | null, renderMode: any) {
         this._canvas = <HTMLCanvasElement> canvas;
@@ -17,7 +17,7 @@ export class Renderer {
         this._adapter = null;
         this._textureFormat = null;
         this._device = null;
-        this.Shader = new ShaderLoader(this);
+        this.ShaderLoader = new ShaderLoader(this);
     }
 
     async init() {

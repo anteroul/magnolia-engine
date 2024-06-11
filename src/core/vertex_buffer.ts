@@ -11,7 +11,7 @@ export class VertexBuffer extends StaticBuffer {
         this._shader = device.createShaderModule({
             label: 'vert',
             code: `
-                @vertex fn main(@builtin(vertex_index) vertexIndex : u32) -> @builtin(position) vec4f {
+                @vertex fn vs_main(@builtin(vertex_index) vertexIndex : u32) -> @builtin(position) vec4f {
                     let pos = array(
                         vec2f(` + vertices[0] + "," + vertices[1] + `),  // top center
                         vec2f(` + vertices[2] + "," + vertices[3] + `),  // bottom left

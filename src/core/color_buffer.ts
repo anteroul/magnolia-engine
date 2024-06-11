@@ -11,7 +11,7 @@ export class ColorBuffer extends StaticBuffer {
         this._shader = device.createShaderModule({
             label: 'vert',
             code: `
-                @fragment fn main() -> @location(0) vec4f {
+                @fragment fn fs_main() -> @location(0) vec4f {
                     return vec4f(` + color[0] + "," + color[1] + "," + color[2] + "," + color[3] + `);
                 }`
         });
