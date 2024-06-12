@@ -80,8 +80,8 @@ export class Renderer {
         
             this.RenderQueue.forEach(element => {
                 index++;
-                passEncoder.setPipeline(this.device.createRenderPipeline(element.pipeline));
-                passEncoder.setVertexBuffer(0, element.vertexBuffer);
+                passEncoder.setPipeline(this.device.createRenderPipeline(<GPURenderPipelineDescriptor> element.pipeline));
+                passEncoder.setVertexBuffer(0, <GPUBuffer> element.buffer);
                 passEncoder.draw(3, index);
             });
 

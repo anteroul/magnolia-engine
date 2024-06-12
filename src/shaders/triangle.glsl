@@ -12,7 +12,6 @@ void main() {
 }
 
 //Fragment shader
-
 varying lowp vec4 vColor;
 
 void main() {

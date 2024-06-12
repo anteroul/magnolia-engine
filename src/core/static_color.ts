@@ -1,7 +1,7 @@
 import { StaticBuffer } from "./buffer";
 import { vec4 } from "gl-matrix";
 
-export class ColorBuffer extends StaticBuffer {
+export class StaticColor extends StaticBuffer {
     private _shader: GPUShaderModule;
     private _format: GPUTextureFormat;
 

@@ -1,4 +1,4 @@
-import { Triangle } from "./core/shapes/triangle";
+import { Triangle } from "./core/shapes/triangle_simple";
 import { Renderer } from "./core/renderer";
 
 let renderer: Renderer | null = null;
@@ -9,11 +9,10 @@ async function main() {
 
     try {
         await renderer.init();
-        //renderer.assets.push(<Renderable> new Renderable(renderer, new Float32Array([1, 1, 1]), await renderer.shader.load("../src/shaders/triangle.glsl")));
         renderer.RenderQueue.push(new Triangle(renderer, new Float32Array([0, 0.5, -0.5, -0.5, 0.5, -0.5]), [1, 0, 0, 1]));
         renderer.RenderQueue.push(new Triangle(renderer, new Float32Array([0, 0.4, -0.4, -0.4, 0.4, -0.4]), [0, 1, 0, 1]));
         renderer.RenderQueue.push(new Triangle(renderer, new Float32Array([0, 0.3, -0.3, -0.3, 0.3, -0.3]), [0, 1, 1, 1]));
-        //renderer.RenderQueue.push(new Triangle(renderer, new Float32Array([0, 0.2, -0.2, -0.2, 0.2, -0.2]), <GPUShaderModule> await renderer.ShaderLoader.load("../src/shaders/triangle.wgsl")));
+        //renderer.RenderQueue.push(new ShadedTriangle(renderer, new Float32Array([0, 0.2, -0.2, -0.2, 0.2, -0.2]), <GPUShaderModule> await renderer.ShaderLoader.load("../src/shaders/triangle .wgsl")));
     } catch (err) {
         throw new Error("Failed to initialize renderer.");
     }
@@ -24,10 +23,6 @@ function gameLoop() {
     if (!renderer)
         return;
     
-    //renderer.beginDrawing();
-    //renderer.drawTriangle([0, 0.5], [-0.5, -0.5], [0.5, -0.5], [1, 0, 0, 1]);
-    //renderer.drawTriangle([0, 0.4], [-0.4, -0.4], [0.4, -0.4], [0, 1, 0, 1]);
-    //renderer.endDrawing();
     renderer.render();
     requestAnimationFrame(gameLoop);
 }
