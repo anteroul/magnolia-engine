@@ -5,7 +5,7 @@ export class StaticBuffer {
   constructor(size: number, usage: number) {
     this._size = size;
     this._usage = usage;
-    console.log(this._size);
+    //console.log(this._size);
   }
 
   get size() {

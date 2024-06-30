@@ -1,6 +1,6 @@
 struct Fragment {
-    @builtin(position) Position: vec4<f32>,
-    @location(0) Color: vec4<f32>
+    @builtin(position) position: vec4<f32>,
+    @location(0) color: vec4<f32>
 };
 
 @vertex
@@ -18,13 +18,13 @@ fn vs_main(@builtin(vertex_index) v_id: u32) -> Fragment {
     );
 
     var output: Fragment;
-    output.Position = vec4<f32>(positions[v_id], 0.0, 1.0);
-    output.Color = vec4<f32>(colors[v_id], 1.0);
+    output.position = vec4<f32>(positions[v_id], 0.0, 1.0);
+    output.color = vec4<f32>(colors[v_id], 1.0);
 
     return output;
 }
 
 @fragment
-fn fs_main(@location(0) Color: vec4<f32>) -> @location(0) vec4<f32> {
-    return Color;
+fn fs_main(@location(0) color: vec4<f32>) -> @location(0) vec4<f32> {
+    return color;
 }
