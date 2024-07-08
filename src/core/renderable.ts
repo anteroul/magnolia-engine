@@ -1,6 +1,6 @@
 export class Renderable {
-  protected _vertexBuffer?: GPUBuffer;
-  protected _pipeline?: GPURenderPipelineDescriptor;
+  protected _vertexBuffer?: GPUBuffer | WebGLBuffer;
+  protected _pipeline?: GPURenderPipelineDescriptor | WebGLProgram;
 
   constructor() {}
 
