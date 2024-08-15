@@ -1,3 +1,2 @@
-# WebGPU/WebGL Benchmarking Tool
-- Version: 0.1.0
-- WORK IN PROGRESS
+# Modern Art Masterpiece Generator
+An extremely useful tool made with WebGPU

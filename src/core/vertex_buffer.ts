@@ -17,7 +17,7 @@ export class VertexBuffer extends StaticBuffer {
                         vec2f(` + vertices[2] + "," + vertices[3] + `),  // bottom left
                         vec2f(` + vertices[4] + "," + vertices[5] + `),  // bottom right
                     );
-               
+                
                     return vec4f(pos[vertexIndex], 0.0, 1.0);
                 }`
         });
