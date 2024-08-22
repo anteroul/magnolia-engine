@@ -1,7 +1,7 @@
 import { Renderable } from "./renderable";
 import { ShaderLoader } from "./shader_loader";
 import { Triangle } from "./shapes/triangle_simple";
-import { rand } from "./util";
+import { rand, cTime } from "./util";
 
 export class Renderer {
     private _canvas: HTMLCanvasElement;
@@ -12,6 +12,7 @@ export class Renderer {
 
     public RenderQueue: Array<Renderable> = [];
     public ShaderLoader: ShaderLoader;
+    public FPS = 0;
 
     constructor(canvas: HTMLCanvasElement | null, renderMode: any) {
         this._canvas = <HTMLCanvasElement>canvas;
@@ -67,6 +68,9 @@ export class Renderer {
     }
 
     render() {
+        const currentTime = cTime();
+        const deltaTime = cTime() - currentTime;
+
         if (this.currentAPI === "WebGPU") {
             const commandEncoder = this.device.createCommandEncoder();
             const ctx = <GPUCanvasContext>this.ctx;
@@ -100,8 +104,9 @@ export class Renderer {
                 [rand(0, 1), rand(0, 1), rand(0, 1), rand(0, 1)]
             ));
         } else {
-            // TODO
+            // TODO: WebGL implementation
         }
+        this.FPS = 1000 / deltaTime;
     }
 
     get ctx() {
