@@ -100,7 +100,7 @@ export class Renderer {
                 [rand(0, 1), rand(0, 1), rand(0, 1), rand(0, 1)]
             ));
         } else {
-            // TODO
+            // TODO: WebGL implementation
         }
     }
 

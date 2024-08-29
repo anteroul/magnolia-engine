@@ -1,9 +1,13 @@
+import now from "performance-now";
 import { Renderer } from "./core/renderer";
 
-let renderer: Renderer | null = null;
-//let createModernArtMasterpiece = false;
 const gcText = "Spawned Geometry: ";
+const fpsText = "FPS: ";
 const geometryCounter = document.getElementById("geometry");
+const fpsCounter = document.getElementById("framerate");
+let renderer: Renderer | null = null;
+let prevFrame = now();
+let FPS = 0;
 
 async function main() {
   let canvas = document.querySelector("canvas");
@@ -12,20 +16,14 @@ async function main() {
   try {
     await renderer.init();
     /*
-    if (createModernArtMasterpiece) {
-      for (let i = 0; i < 10; i++) {
-        renderer.RenderQueue.push(
-          new Triangle(renderer, new Float32Array([rand(-2, 2), rand(-2, 2), rand(-2, 2), rand(-2, 2), rand(-2, 2), rand(-2, 2)]),
-          [rand(0, 1), rand(0, 1), rand(0, 1), rand(0, 1)])
-        );
-      }
-    } else {
-        renderer.RenderQueue.push(new ShadedTriangle(
-        renderer,
-        new Float32Array([0, 0.2, -0.2, -0.2, 0.2, -0.2]),
-        <GPUShaderModule>await renderer.ShaderLoader.load("./src/shaders/triangle.wgsl")
-      ));
-    }
+    TODO: This needs to be simplified:
+    renderer.RenderQueue.push(
+      new ShadedTriangle
+      (
+        renderer, new Float32Array([0, 0.2, -0.2, -0.2, 0.2, -0.2]), 
+        <GPUShaderModule> await renderer.ShaderLoader.load("./src/shaders/triangle.wgsl")
+      )
+    );
     */
   } catch (err) {
     throw new Error("Failed to initialize renderer.");
@@ -33,13 +31,23 @@ async function main() {
   gameLoop();
 }
 
-function gameLoop() {
-  if (!renderer)
-    return;
+function update() {
+  prevFrame = now();
+  /* game logic here */
+}
 
-  renderer.render();            
-  if (geometryCounter) {
+function gameLoop() {
+  const currentFrame = now();
+  const deltaTime = currentFrame - prevFrame;
+
+  if (renderer) {
+    renderer.render();
+    update();
+    FPS = 1000 / deltaTime;
+    if (geometryCounter && fpsCounter) {
       geometryCounter.innerText = gcText + renderer.RenderQueue.length;
+      fpsCounter.innerHTML = fpsText + FPS.toFixed(0);
+    }
   }
   requestAnimationFrame(gameLoop);
 }
