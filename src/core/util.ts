@@ -1,5 +1,3 @@
-import now from 'performance-now';
-
 export const rand = (min: number, max: number) => {
     if (min === undefined) {
         min = 0;
@@ -10,5 +8,3 @@ export const rand = (min: number, max: number) => {
     }
     return min + Math.random() * (max - min);
 }
-
-export const cTime = now;

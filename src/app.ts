@@ -1,8 +1,13 @@
+import now from "performance-now";
 import { Renderer } from "./core/renderer";
 
 const gcText = "Spawned Geometry: ";
+const fpsText = "FPS: ";
 const geometryCounter = document.getElementById("geometry");
+const fpsCounter = document.getElementById("framerate");
 let renderer: Renderer | null = null;
+let prevFrame = now();
+let FPS = 0;
 
 async function main() {
   let canvas = document.querySelector("canvas");
@@ -26,15 +31,25 @@ async function main() {
   gameLoop();
 }
 
+function update() {
+  prevFrame = now();
+  /* game logic here */
+}
+
 function gameLoop() {
-  if (!renderer)
-    return;
-  else
-    requestAnimationFrame(renderer.render);
-  if (geometryCounter) {
-    geometryCounter.innerText = gcText + renderer.RenderQueue.length;
+  const currentFrame = now();
+  const deltaTime = currentFrame - prevFrame;
+
+  if (renderer) {
+    renderer.render();
+    update();
+    FPS = 1000 / deltaTime;
+    if (geometryCounter && fpsCounter) {
+      geometryCounter.innerText = gcText + renderer.RenderQueue.length;
+      fpsCounter.innerHTML = fpsText + FPS.toFixed(0);
+    }
   }
-  gameLoop();
+  requestAnimationFrame(gameLoop);
 }
 
 await main();
