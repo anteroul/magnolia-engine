@@ -10,29 +10,7 @@ export async function createRenderPipeline(device: GPUDevice, shaderModule?: GPU
         layout: "auto", // Let WebGPU infer the pipeline layout
         vertex: {
             module: shaderModule,
-            entryPoint: 'vs_main',
-            buffers: [
-                {
-                    arrayStride: 4 * 2, // 2 float32s for position
-                    attributes: [
-                        {
-                            shaderLocation: 0, // Position (vec2)
-                            offset: 0,
-                            format: 'float32x2'
-                        }
-                    ]
-                },
-                {
-                    arrayStride: 4 * 4, // 4 float32s for color
-                    attributes: [
-                        {
-                            shaderLocation: 1, // Color (vec4)
-                            offset: 0,
-                            format: 'float32x4'
-                        }
-                    ]
-                }
-            ]
+            entryPoint: 'vs_main'
         },
         fragment: {
             module: shaderModule,

@@ -1,9 +1,10 @@
 import { createRenderPipeline } from "./pipeline";
 import { Renderable } from "./renderable";
 import { ShaderLoader } from "./shader_loader";
+import { rand } from "./util";
 
-const numberOfObjects = 100;  // Maximum number of objects
-const matrixSize = 9 * 4;
+const totalGeometry = 100
+const uniformBufferSize = 32 * 100;
 
 export class Renderer {
     private _canvas: HTMLCanvasElement;
@@ -14,6 +15,7 @@ export class Renderer {
     private _bindGroup?: GPUBindGroup;
     private _uniformBuffer?: GPUBuffer;
     private _textureFormat?: GPUTextureFormat;
+    private _uniformValues = new Float32Array(uniformBufferSize / 4);
 
     public renderQueue: Array<Renderable> = [];
     public shaderLoader: ShaderLoader;
@@ -54,59 +56,28 @@ export class Renderer {
 
                 this._pipeline = await createRenderPipeline(this._device, <GPUShaderModule> await this.shaderLoader.load("./src/shaders/triangle.wgsl"));
 
-                const uniformBufferSize = numberOfObjects * matrixSize;
-
                 this._uniformBuffer = this._device.createBuffer({
+                    label: "triangle uniform",
                     size: uniformBufferSize,
                     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
                 });
 
-                const bindGroupLayout = this._device.createBindGroupLayout({
-                    entries: [
-                        {
-                            binding: 0,
-                            visibility: GPUShaderStage.VERTEX,
-                            buffer: {
-                                type: 'uniform',
-                                hasDynamicOffset: true  // Enable dynamic offsets
-                            }
-                        },
-                        {
-                            binding: 1,  // Color buffer
-                            visibility: GPUShaderStage.FRAGMENT,
-                            buffer: {
-                                type: 'uniform',
-                            }
-                        }
-                    ]
-                });
-
                 this._bindGroup = this._device.createBindGroup({
-                    layout: bindGroupLayout,
+                    layout: this._pipeline.getBindGroupLayout(0),
                     entries: [
                         {
                             binding: 0,
                             resource: {
                                 buffer: this._uniformBuffer,
                                 offset: 0,  // This will be set dynamically in the render loop
-                                size: matrixSize
-                            }
-                        },
-                        {
-                            binding: 1,  // Color buffer
-                            resource: {
-                                buffer: this._uniformBuffer,
-                                offset: 0,  // This will be set dynamically in the render loop
-                                size: 16
                             }
                         }
                     ]
                 });
-
+                
+                for (let i = 0; i < totalGeometry; ++i)
+                    this.renderQueue.push(new Renderable(this, ([rand(-1, 1), rand(-1, 1)]), ([rand(-1, 1), rand(-1, 1)]), ([rand(0, 1), rand(0, 1), rand(0, 1), 1])));
                 // initialization finished
-                this.renderQueue.push(new Renderable(this, ([0, 0]), 2, ([1, 0, 0, 1]), new Float32Array([1,1,1]), this._pipeline));
-                this.renderQueue.push(new Renderable(this, ([-1, 1]), 2, ([0, 1, 0, 1]), new Float32Array([1,1,1]), this._pipeline));
-                this.renderQueue.push(new Renderable(this, ([1, 1]), 2, ([1, 0, 1, 1]), new Float32Array([1,1,1]), this._pipeline));
             }
         } else {
             // WebGL initialization
@@ -117,11 +88,6 @@ export class Renderer {
             // initialization finished
         }
         console.log(this.currentAPI + " initialized.");
-    }
-
-    updateUniformBufferForObject() {
-        const offset = this.geometryCount * matrixSize + 16;  // Find the correct offset for the object's data
-        this.device.queue.writeBuffer(<GPUBuffer> this._uniformBuffer, offset, this.renderQueue[this.geometryCount].matrix);
     }
 
     render() {
@@ -141,11 +107,14 @@ export class Renderer {
             passEncoder?.setBindGroup(0, <GPUBindGroup> this._bindGroup);
 
             this.renderQueue.forEach((renderable) => {
-                passEncoder?.setVertexBuffer(0, <GPUBuffer> renderable.vertexBuffer);
-                passEncoder?.setVertexBuffer(1, <GPUBuffer> renderable.colorBuffer);
+                this._uniformValues.set(renderable.position, 0);              // set the position
+                this._uniformValues.set(renderable.scale, 2);                 // set the scale
+                this._uniformValues.set(renderable.color, 4);                     // set the color
+                this.device.queue.writeBuffer(<GPUBuffer> this._uniformBuffer, 0, this._uniformValues);    
+                this.device.queue.writeBuffer(<GPUBuffer> renderable.vertexBuffer, 1, this._uniformValues);
+                this.device.queue.writeBuffer(<GPUBuffer> renderable.colorBuffer, 2, this._uniformValues);
                 passEncoder?.draw(3);
             });
-
             passEncoder?.end();
             this.device.queue.submit([commandEncoder.finish()]);
         } else {
