@@ -15,23 +15,13 @@ async function main() {
 
   try {
     await renderer.init();
-    /*
-    TODO: This needs to be simplified:
-    renderer.RenderQueue.push(
-      new ShadedTriangle
-      (
-        renderer, new Float32Array([0, 0.2, -0.2, -0.2, 0.2, -0.2]), 
-        <GPUShaderModule> await renderer.ShaderLoader.load("./src/shaders/triangle.wgsl")
-      )
-    );
-    */
   } catch (err) {
     throw new Error("Failed to initialize renderer.");
   }
   gameLoop();
 }
 
-function update() {
+function update(deltaTime: number) {
   prevFrame = now();
   /* game logic here */
 }
@@ -42,10 +32,10 @@ function gameLoop() {
 
   if (renderer) {
     renderer.render();
-    update();
+    update(deltaTime);
     FPS = 1000 / deltaTime;
     if (geometryCounter && fpsCounter) {
-      geometryCounter.innerText = gcText + renderer.RenderQueue.length;
+      geometryCounter.innerHTML = gcText + renderer.geometryCount;
       fpsCounter.innerHTML = fpsText + FPS.toFixed(0);
     }
   }
