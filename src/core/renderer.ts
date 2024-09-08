@@ -1,25 +1,27 @@
+import { createRenderPipeline } from "./pipeline";
 import { Renderable } from "./renderable";
 import { ShaderLoader } from "./shader_loader";
-import { Triangle } from "./shapes/triangle_simple";
-import { rand } from "./util";
+
+const numberOfObjects = 100;  // Maximum number of objects
+const matrixSize = 9 * 4;
 
 export class Renderer {
     private _canvas: HTMLCanvasElement;
     private _ctx: GPUCanvasContext | WebGL2RenderingContext | WebGLRenderingContext;
-    private _adapter: GPUAdapter | null;
-    private _textureFormat: GPUTextureFormat | null;
-    private _device: GPUDevice | null;
+    private _adapter?: GPUAdapter;
+    private _device?: GPUDevice;
+    private _pipeline?: GPURenderPipeline;
+    private _bindGroup?: GPUBindGroup;
+    private _uniformBuffer?: GPUBuffer;
+    private _textureFormat?: GPUTextureFormat;
 
-    public RenderQueue: Array<Renderable> = [];
-    public ShaderLoader: ShaderLoader;
+    public renderQueue: Array<Renderable> = [];
+    public shaderLoader: ShaderLoader;
 
     constructor(canvas: HTMLCanvasElement | null, renderMode: any) {
         this._canvas = <HTMLCanvasElement>canvas;
         this._ctx = renderMode;
-        this._adapter = null;
-        this._textureFormat = null;
-        this._device = null;
-        this.ShaderLoader = new ShaderLoader(this);
+        this.shaderLoader = new ShaderLoader(this);
     }
 
     async init() {
@@ -30,7 +32,7 @@ export class Renderer {
             } else {
                 console.log("WebGPU support confirmed.");
                 // WebGPU initialization code:
-                this._adapter = await navigator.gpu.requestAdapter();
+                this._adapter = <GPUAdapter>await navigator.gpu.requestAdapter();
 
                 if (!this._adapter) {
                     throw new Error("No appropriate GPU adapter found.");
@@ -49,11 +51,62 @@ export class Renderer {
                     device: <GPUDevice>this._device,
                     format: this._textureFormat
                 });
+
+                this._pipeline = await createRenderPipeline(this._device, <GPUShaderModule> await this.shaderLoader.load("./src/shaders/triangle.wgsl"));
+
+                const uniformBufferSize = numberOfObjects * matrixSize;
+
+                this._uniformBuffer = this._device.createBuffer({
+                    size: uniformBufferSize,
+                    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+                });
+
+                const bindGroupLayout = this._device.createBindGroupLayout({
+                    entries: [
+                        {
+                            binding: 0,
+                            visibility: GPUShaderStage.VERTEX,
+                            buffer: {
+                                type: 'uniform',
+                                hasDynamicOffset: true  // Enable dynamic offsets
+                            }
+                        },
+                        {
+                            binding: 1,  // Color buffer
+                            visibility: GPUShaderStage.FRAGMENT,
+                            buffer: {
+                                type: 'uniform',
+                            }
+                        }
+                    ]
+                });
+
+                this._bindGroup = this._device.createBindGroup({
+                    layout: bindGroupLayout,
+                    entries: [
+                        {
+                            binding: 0,
+                            resource: {
+                                buffer: this._uniformBuffer,
+                                offset: 0,  // This will be set dynamically in the render loop
+                                size: matrixSize
+                            }
+                        },
+                        {
+                            binding: 1,  // Color buffer
+                            resource: {
+                                buffer: this._uniformBuffer,
+                                offset: 0,  // This will be set dynamically in the render loop
+                                size: 16
+                            }
+                        }
+                    ]
+                });
+
                 // initialization finished
-                this.RenderQueue.push(
-                    new Triangle(this, new Float32Array([rand(-2, 2), rand(-2, 2), rand(-2, 2), rand(-2, 2), rand(-2, 2), rand(-2, 2)]),
-                        [rand(0, 1), rand(0, 1), rand(0, 1), rand(0, 1)])
-                );
+                this.renderQueue.push(new Renderable(this, ([0, 0]), 2, ([1, 0, 0, 1]), new Float32Array([1,1,1]), this._pipeline));
+                this.renderQueue.push(new Renderable(this, ([-1, 1]), 2, ([0, 1, 0, 1]), new Float32Array([1,1,1]), this._pipeline));
+                this.renderQueue.push(new Renderable(this, ([1, 1]), 2, ([1, 0, 1, 1]), new Float32Array([1,1,1]), this._pipeline));
             }
         } else {
             // WebGL initialization
@@ -66,46 +119,42 @@ export class Renderer {
         console.log(this.currentAPI + " initialized.");
     }
 
+    updateUniformBufferForObject() {
+        const offset = this.geometryCount * matrixSize + 16;  // Find the correct offset for the object's data
+        this.device.queue.writeBuffer(<GPUBuffer> this._uniformBuffer, offset, this.renderQueue[this.geometryCount].matrix);
+    }
+
     render() {
         if (this.currentAPI === "WebGPU") {
-            const commandEncoder = this.device.createCommandEncoder();
-            const ctx = <GPUCanvasContext>this.ctx;
-            const textureView = ctx.getCurrentTexture().createView();
-
             const renderPassDescriptor = <GPURenderPassDescriptor>{
                 colorAttachments: [{
-                    view: textureView,
+                    view: this.ctx.getCurrentTexture().createView(),
                     loadOp: 'clear',
                     storeOp: 'store',
                     clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 }
                 }]
             };
 
+            const commandEncoder = this.device.createCommandEncoder();
             const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
-            let index = 0;
+            passEncoder?.setPipeline(<GPURenderPipeline> this._pipeline);
+            passEncoder?.setBindGroup(0, <GPUBindGroup> this._bindGroup);
 
-            this.RenderQueue.forEach(element => {
-                index++;
-                passEncoder.setPipeline(this.device.createRenderPipeline(<GPURenderPipelineDescriptor>element.pipeline));
-                passEncoder.setVertexBuffer(0, <GPUBuffer>element.buffer);
-                passEncoder.draw(3, index);
+            this.renderQueue.forEach((renderable) => {
+                passEncoder?.setVertexBuffer(0, <GPUBuffer> renderable.vertexBuffer);
+                passEncoder?.setVertexBuffer(1, <GPUBuffer> renderable.colorBuffer);
+                passEncoder?.draw(3);
             });
 
-            passEncoder.end();
+            passEncoder?.end();
             this.device.queue.submit([commandEncoder.finish()]);
-
-            this.RenderQueue.push(new Triangle(
-                this,
-                new Float32Array([rand(-2, 2), rand(-2, 2), rand(-2, 2), rand(-2, 2), rand(-2, 2), rand(-2, 2)]),
-                [rand(0, 1), rand(0, 1), rand(0, 1), rand(0, 1)]
-            ));
         } else {
             // TODO: WebGL implementation
         }
     }
 
     get ctx() {
-        return <GPUCanvasContext | WebGL2RenderingContext | WebGLRenderingContext>this._ctx;
+        return <GPUCanvasContext> this._ctx;
     }
 
     get device() {
@@ -117,12 +166,16 @@ export class Renderer {
     }
 
     get currentAPI() {
-        if (this.ctx instanceof GPUCanvasContext)
+        if (this._ctx instanceof GPUCanvasContext)
             return "WebGPU";
-        if (this.ctx instanceof WebGL2RenderingContext)
+        if (this._ctx instanceof WebGL2RenderingContext)
             return "WebGL2";
-        if (this.ctx instanceof WebGLRenderingContext)
+        if (this._ctx instanceof WebGLRenderingContext)
             return "WebGL";
         return "none";
+    }
+
+    get geometryCount() {
+        return this.renderQueue.length;
     }
 }
