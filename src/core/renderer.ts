@@ -3,8 +3,7 @@ import { Renderable } from "./renderable";
 import { ShaderLoader } from "./shader_loader";
 import { rand } from "./util";
 
-const totalGeometry = 100
-const uniformBufferSize = 32 * 100;
+const uniformBufferSize = 32 * 1000;
 
 export class Renderer {
     private _canvas: HTMLCanvasElement;
@@ -75,8 +74,6 @@ export class Renderer {
                     ]
                 });
                 
-                for (let i = 0; i < totalGeometry; ++i)
-                    this.renderQueue.push(new Renderable(this, ([rand(-1, 1), rand(-1, 1)]), ([rand(-1, 1), rand(-1, 1)]), ([rand(0, 1), rand(0, 1), rand(0, 1), 1])));
                 // initialization finished
             }
         } else {
@@ -109,7 +106,7 @@ export class Renderer {
             this.renderQueue.forEach((renderable) => {
                 this._uniformValues.set(renderable.position, 0);              // set the position
                 this._uniformValues.set(renderable.scale, 2);                 // set the scale
-                this._uniformValues.set(renderable.color, 4);                     // set the color
+                this._uniformValues.set(renderable.color, 4);                 // set the color
                 this.device.queue.writeBuffer(<GPUBuffer> this._uniformBuffer, 0, this._uniformValues);    
                 this.device.queue.writeBuffer(<GPUBuffer> renderable.vertexBuffer, 1, this._uniformValues);
                 this.device.queue.writeBuffer(<GPUBuffer> renderable.colorBuffer, 2, this._uniformValues);
@@ -146,5 +143,9 @@ export class Renderer {
 
     get geometryCount() {
         return this.renderQueue.length;
+    }
+
+    get pipeline() {
+        return <GPURenderPipeline> this._pipeline;
     }
 }

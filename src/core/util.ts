@@ -1,3 +1,5 @@
+import { vec2 } from "gl-matrix";
+
 export const rand = (min: number, max: number) => {
     if (min === undefined) {
         min = 0;
@@ -10,7 +12,13 @@ export const rand = (min: number, max: number) => {
 }
 
 export const accelerate = (v: number, dt: number) => {
-    return v * (dt * dt);
+    return v / (dt * dt);
+}
+
+export const translate = (v: vec2, dx: number, dy: number) => {
+    v[0] += dx;
+    v[1] += dy;
+    return v;
 }
 
 export function createTransformationMatrix(tx: number, ty: number, angle: number, scaleX: number, scaleY: number): Float32Array {
