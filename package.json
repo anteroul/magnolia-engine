@@ -1,6 +1,6 @@
 {
   "name": "webgpu-renderer",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "description": "Rendering Engine",
   "main": "index.js",
   "scripts": {

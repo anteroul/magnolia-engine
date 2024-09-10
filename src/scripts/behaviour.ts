@@ -3,7 +3,7 @@ import { rand } from "../core/util";
 
 export function wanderAround(gameObject: GameObject) {
     const waypoint = ([rand(-0.5, 0.5), rand(-0.5, 0.5)]);
-    const speed = 0.002;
+    const speed = 0.02;
 
     if (gameObject.position[0] > 1 || gameObject.position[0] < -1) {
         waypoint[0] *= -1;
