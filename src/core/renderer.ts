@@ -1,9 +1,6 @@
 import { createRenderPipeline } from "./pipeline";
 import { Renderable } from "./renderable";
 import { ShaderLoader } from "./shader_loader";
-import { rand } from "./util";
-
-const uniformBufferSize = 32 * 1000;
 
 export class Renderer {
     private _canvas: HTMLCanvasElement;
@@ -11,10 +8,7 @@ export class Renderer {
     private _adapter?: GPUAdapter;
     private _device?: GPUDevice;
     private _pipeline?: GPURenderPipeline;
-    private _bindGroup?: GPUBindGroup;
-    private _uniformBuffer?: GPUBuffer;
     private _textureFormat?: GPUTextureFormat;
-    private _uniformValues = new Float32Array(uniformBufferSize / 4);
 
     public renderQueue: Array<Renderable> = [];
     public shaderLoader: ShaderLoader;
@@ -53,27 +47,7 @@ export class Renderer {
                     format: this._textureFormat
                 });
 
-                this._pipeline = await createRenderPipeline(this._device, <GPUShaderModule> await this.shaderLoader.load("./src/shaders/triangle.wgsl"));
-
-                this._uniformBuffer = this._device.createBuffer({
-                    label: "triangle uniform",
-                    size: uniformBufferSize,
-                    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
-                });
-
-                this._bindGroup = this._device.createBindGroup({
-                    layout: this._pipeline.getBindGroupLayout(0),
-                    entries: [
-                        {
-                            binding: 0,
-                            resource: {
-                                buffer: this._uniformBuffer,
-                                offset: 0,  // This will be set dynamically in the render loop
-                            }
-                        }
-                    ]
-                });
-                
+                this._pipeline = await createRenderPipeline(this._device, <GPUShaderModule>await this.shaderLoader.load("./src/shaders/triangle.wgsl"));
                 // initialization finished
             }
         } else {
@@ -100,17 +74,26 @@ export class Renderer {
 
             const commandEncoder = this.device.createCommandEncoder();
             const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
-            passEncoder?.setPipeline(<GPURenderPipeline> this._pipeline);
-            passEncoder?.setBindGroup(0, <GPUBindGroup> this._bindGroup);
+            passEncoder?.setPipeline(<GPURenderPipeline>this._pipeline);
 
             this.renderQueue.forEach((renderable) => {
-                this._uniformValues.set(renderable.position, 0);              // set the position
-                this._uniformValues.set(renderable.scale, 2);                 // set the scale
-                this._uniformValues.set(renderable.color, 4);                 // set the color
-                this.device.queue.writeBuffer(<GPUBuffer> this._uniformBuffer, 0, this._uniformValues);    
-                this.device.queue.writeBuffer(<GPUBuffer> renderable.vertexBuffer, 1, this._uniformValues);
-                this.device.queue.writeBuffer(<GPUBuffer> renderable.colorBuffer, 2, this._uniformValues);
-                passEncoder?.draw(3);
+                const uniformData = this.getUniformDataForRenderable(renderable).buffer;
+                this.device.queue.writeBuffer(<GPUBuffer>renderable.uniformBuffer, 0, uniformData);
+                const bindGroup = this.device.createBindGroup({
+                    layout: <GPUBindGroupLayout>this._pipeline?.getBindGroupLayout(0),
+                    entries: [
+                        {
+                            binding: 0,
+                            resource: {
+                                buffer: <GPUBuffer>renderable.uniformBuffer,
+                            },
+                        },
+                    ],
+                });
+                passEncoder.setBindGroup(0, bindGroup);
+                passEncoder.setVertexBuffer(0, <GPUBuffer>renderable.vertexBuffer);
+                passEncoder.setVertexBuffer(1, <GPUBuffer>renderable.colorBuffer);
+                passEncoder?.draw(renderable.vertexCount, 1, 0, 0);
             });
             passEncoder?.end();
             this.device.queue.submit([commandEncoder.finish()]);
@@ -119,8 +102,26 @@ export class Renderer {
         }
     }
 
+    getUniformDataForRenderable(renderable: Renderable): { buffer: ArrayBuffer } {
+        const uniformData = new Float32Array(16);
+        uniformData.set(renderable.position, 0);              // set the position
+        uniformData.set(renderable.scale, 2);                 // set the scale
+        uniformData.set(renderable.color, 4);                 // set the color
+
+        renderable.uniformBuffer = this.device.createBuffer({
+            label: "triangle uniform",
+            size: uniformData.byteLength,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+            mappedAtCreation: true,
+        });
+        new Float32Array(renderable.uniformBuffer.getMappedRange()).set(uniformData);
+        renderable.uniformBuffer.unmap();
+        // Populate `uniformData` as needed for each renderable
+        return { buffer: uniformData.buffer };
+    }
+
     get ctx() {
-        return <GPUCanvasContext> this._ctx;
+        return <GPUCanvasContext>this._ctx;
     }
 
     get device() {
@@ -146,6 +147,6 @@ export class Renderer {
     }
 
     get pipeline() {
-        return <GPURenderPipeline> this._pipeline;
+        return <GPURenderPipeline>this._pipeline;
     }
 }

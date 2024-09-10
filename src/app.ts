@@ -28,8 +28,8 @@ async function main() {
   }
   player = spawnGameObject(0, 0, 0.5, RED);
   player.setBehaviourFunction(arrowKeyMovement);
-  //npc = spawnGameObject(rand(-1, 1), rand(-1, 1), 0.5, GREEN);
-  //npc.setBehaviourFunction(wanderAround);
+  npc = spawnGameObject(rand(-1, 1), rand(-1, 1), 0.5, GREEN);
+  npc.setBehaviourFunction(wanderAround);
   gameLoop();
 }
 
