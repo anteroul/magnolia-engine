@@ -1,17 +1,29 @@
-import { GameObject } from "../game_object";
+import { BehaviourScript } from "../core/behaviour_script";
+import { GameObject } from "../core/game_object";
 import { rand } from "../core/util";
+import { vec2 } from "gl-matrix";
 
-export function wanderAround(gameObject: GameObject) {
-    const waypoint = ([rand(-0.5, 0.5), rand(-0.5, 0.5)]);
-    const speed = 0.02;
+export class WanderAround extends BehaviourScript {
+    private waypoint: vec2;
+    private speed;
 
-    if (gameObject.position[0] > 1 || gameObject.position[0] < -1) {
-        waypoint[0] *= -1;
-    }
-
-    if (gameObject.position[1] > 1 || gameObject.position[1] < -1) {
-        waypoint[1] *= -1;
+    constructor(obj: GameObject, speed: number) {
+        super(obj);
+        this.waypoint = ([rand(-0.5, 0.5), rand(-0.5, 0.5)]);
+        this.speed = speed;
     }
     
-    gameObject.moveTransform(waypoint[0] * speed, waypoint[1] * speed);
+    update() {
+        if (this.gameObject.position[0] + (this.gameObject.scale[0] / 2) > 1 || this.gameObject.position[0] - (this.gameObject.scale[0] / 2) < -1) {
+            this.gameObject.ricochet(this.gameObject.velocity[0]);
+            this.waypoint[0] *= -1;
+        }
+    
+        if (this.gameObject.position[1] + (this.gameObject.scale[1] / 2) > 1 || this.gameObject.position[1] - (this.gameObject.scale[1] / 2) < -1) {
+            this.gameObject.ricochet(this.gameObject.velocity[1]);
+            this.waypoint[1] *= -1;
+        }
+        
+        this.gameObject.moveTransform(this.waypoint[0] * this.speed, this.waypoint[1] * this.speed);
+    }
 }

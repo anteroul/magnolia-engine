@@ -1,9 +1,12 @@
 import now from "performance-now";
 import { Renderer } from "./core/renderer";
 import { Renderable } from "./core/renderable";
-import { GameObject } from "./game_object";
-import { wanderAround } from "./scripts/behaviour";
+import { GameObject } from "./core/game_object";
+import { WanderAround } from "./scripts/behaviour";
 import { rand } from "./core/util";
+import { RED } from "./core/colors";
+import { PlayerControls } from "./scripts/player_controls";
+import { SpawnObject } from "./scripts/spawn_object";
 
 const gcText = "Spawned Geometry: ";
 const fpsText = "FPS: ";
@@ -22,9 +25,9 @@ async function main() {
   } catch (err) {
     throw new Error("Failed to initialize renderer.");
   }
-  for (let i = 0; i < 600; ++i) {
-    let gameObject = spawnGameObject(rand(-1, 1), rand(-1, 1), 0.5, new Float32Array([rand(0, 1), rand(0, 1), rand(0, 1), 1]));
-    gameObject.setBehaviourFunction(wanderAround);
+  for (let i = 0; i < 100; ++i) {
+    let obj = spawnGameObject(rand(-0.75, 0.75), rand(-0.75, 0.75), 0.5, new Float32Array([rand(0, 1), rand(0, 1), rand(0, 1), 1]));
+    obj.setBehaviourFunction(new WanderAround(obj, 0.001));
   }
   gameLoop();
 }
@@ -62,5 +65,9 @@ function gameLoop() {
   }
   requestAnimationFrame(gameLoop);
 }
+
+export const spawnObject = (x: number, y: number, size: number, color: Float32Array) => {
+  return spawnGameObject(x, y, size, color);
+};
 
 await main();

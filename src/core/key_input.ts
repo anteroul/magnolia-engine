@@ -1,4 +1,4 @@
-export module KeyInputManager {
+module KeyInputManager {
     let keysDown: Array<string> = [];
 
     // Add event listeners for keyboard input
@@ -20,3 +20,5 @@ export module KeyInputManager {
         return keysDown.includes(key)
     }
 }
+
+export const Input = KeyInputManager;
