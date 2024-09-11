@@ -1,13 +1,14 @@
 import { vec2 } from "gl-matrix";
-import { Renderable } from "./core/renderable";
-import { accelerate, translate } from "./core/util";
+import { Renderable } from "./renderable";
+import { accelerate, translate } from "./util";
+import { BehaviourScript } from "./behaviour_script";
 
 export class GameObject {
     private _position: vec2;
     private _texture: Renderable;
     private _scale: vec2;
     private _velocity: vec2 = ([0.0, 0.0]);
-    private _behaviourScript = (obj: GameObject) => {}; // custom user defined logic
+    private _behaviourScript: BehaviourScript[] = [];
 
     public time: number = 0.0;
 
@@ -18,13 +19,14 @@ export class GameObject {
         this._texture.translate(this._position);
     }
 
-    updateBehaviour(script: (obj: GameObject) => void) {
-        script(this);
-    }
-
     update(deltaTime: number) {
         this.time = deltaTime;
-        this.updateBehaviour(this._behaviourScript);
+        
+        // call user defined update functions:
+        this._behaviourScript.forEach(script => {
+            script.update();
+        });
+
         this._position = translate(this._position, this._velocity[0], this._velocity[1]);
         this._velocity[0] -= accelerate(this._velocity[0], deltaTime);
         this._velocity[1] -= accelerate(this._velocity[1], deltaTime);
@@ -42,8 +44,15 @@ export class GameObject {
         this._scale[1] *= scale;
     }
 
-    setBehaviourFunction(script: { (gameObject: GameObject): void; (obj: GameObject): void; }) {
-        this._behaviourScript = script;
+    setBehaviourFunction(script: BehaviourScript) {
+        this._behaviourScript?.push(script);
+    }
+
+    ricochet(velocity: number) {
+        if (velocity == this._velocity[0])
+            this._velocity[0] *= -1;
+        else if (velocity == this._velocity[1])
+            this._velocity[1] *= -1;
     }
 
     get position() {
@@ -52,6 +61,10 @@ export class GameObject {
 
     get velocity() {
         return this._velocity;
+    }
+
+    get scale() {
+        return this._scale;
     }
 
     get texture() {

@@ -1,6 +1,6 @@
 {
-  "name": "webgpu-renderer",
-  "version": "0.1.5",
+  "name": "MagnoliaEngine",
+  "version": "0.2.2",
   "description": "Rendering Engine",
   "main": "index.js",
   "scripts": {
