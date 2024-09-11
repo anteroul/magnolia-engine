@@ -1,7 +1,7 @@
 {
   "name": "MagnoliaEngine",
   "version": "0.2.2",
-  "description": "Rendering Engine",
+  "description": "WebGPU/WebGL rendering engine",
   "main": "index.js",
   "scripts": {
     "start": "npm run install-dependencies && npm run build && npm run serve",

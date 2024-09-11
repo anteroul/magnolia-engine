@@ -25,9 +25,6 @@ async function main() {
   } catch (err) {
     throw new Error("Failed to initialize renderer.");
   }
-  let cursor = spawnGameObject(0.0, 0.0, 0.01, RED);
-  cursor.setBehaviourFunction(new PlayerControls(cursor));
-  //cursor.setBehaviourFunction(new SpawnObject(cursor, 0.3));
   for (let i = 0; i < 100; ++i) {
     let obj = spawnGameObject(rand(-0.75, 0.75), rand(-0.75, 0.75), 0.5, new Float32Array([rand(0, 1), rand(0, 1), rand(0, 1), 1]));
     obj.setBehaviourFunction(new WanderAround(obj, 0.001));
