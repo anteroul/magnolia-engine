@@ -5,10 +5,13 @@ import { ShaderLoader } from "./shader_loader";
 export class Renderer {
     private _canvas: HTMLCanvasElement;
     private _ctx: GPUCanvasContext | WebGL2RenderingContext | WebGLRenderingContext;
+    // WGPU rendering:
     private _adapter?: GPUAdapter;
     private _device?: GPUDevice;
     private _pipeline?: GPURenderPipeline;
     private _textureFormat?: GPUTextureFormat;
+    // WebGL rendering:
+    private _shaderProgram?: WebGLProgram;
 
     public renderQueue: Array<Renderable> = [];
     public shaderLoader: ShaderLoader;
@@ -53,9 +56,13 @@ export class Renderer {
         } else {
             // WebGL initialization
             if (!this._ctx) {
-                console.log("Failed to initialize WebGL2. Switching to legacy WebGL.");
                 this._ctx = <WebGLRenderingContext>this._canvas.getContext("webgl");
+                if (!this._ctx) {
+                    console.log("Failed to initialize WebGL2. Switching to legacy WebGL.");
+                    this._ctx = <WebGLRenderingContext>this._canvas.getContext("experimental-webgl");
+                }
             }
+            this._shaderProgram = await <WebGLProgram>this.shaderLoader.load("./src/shaders/triangle.glsl");
             // initialization finished
         }
         console.log(this.currentAPI + " initialized.");
@@ -99,6 +106,18 @@ export class Renderer {
             this.device.queue.submit([commandEncoder.finish()]);
         } else {
             // TODO: WebGL implementation
+            this.ctxGL.useProgram(<WebGLProgram>this._shaderProgram);
+            this.renderQueue.forEach((renderable) => {
+                const positionBuffer = this.ctxGL.createBuffer();
+                this.ctxGL.bindBuffer(this.ctxGL.ARRAY_BUFFER, positionBuffer);
+                this.ctxGL.bufferData(this.ctxGL.ARRAY_BUFFER, new Float32Array(renderable.vertexData), this.ctxGL.STATIC_DRAW);
+                const vertexPosition = this.ctxGL.getAttribLocation(<WebGLProgram>this._shaderProgram, 'aVertexPosition');
+                this.ctxGL.enableVertexAttribArray(vertexPosition);
+                this.ctxGL.vertexAttribPointer(vertexPosition, 2, this.ctxGL.FLOAT, false, 0, 0);
+                this.ctxGL.clearColor(0.0, 0.0, 0.0, 1.0);
+                this.ctxGL.clear(this.ctxGL.COLOR_BUFFER_BIT);
+                this.ctxGL.drawArrays(this.ctxGL.TRIANGLES, 0, 3);
+            });
         }
     }
 
@@ -122,6 +141,10 @@ export class Renderer {
 
     get ctx() {
         return <GPUCanvasContext>this._ctx;
+    }
+
+    get ctxGL() {
+        return <WebGL2RenderingContext | WebGLRenderingContext>this._ctx;
     }
 
     get device() {

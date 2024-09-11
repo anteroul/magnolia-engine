@@ -2,20 +2,24 @@ import now from "performance-now";
 import { Renderer } from "./core/renderer";
 import { Renderable } from "./core/renderable";
 import { GameObject } from "./core/game_object";
+import { RED } from "./core/colors";
 import { WanderAround } from "./scripts/behaviour";
 import { rand } from "./core/util";
-import { RED } from "./core/colors";
 import { PlayerControls } from "./scripts/player_controls";
-import { SpawnObject } from "./scripts/spawn_object";
+import { BorderCollision } from "./scripts/collisions";
 
 const gcText = "Spawned Geometry: ";
 const fpsText = "FPS: ";
+const renderMode = document.getElementById("renderMode");
 const geometryCounter = document.getElementById("geometry");
 const fpsCounter = document.getElementById("framerate");
+const avgFramerate = document.getElementById("avgFramerate");
 let renderer: Renderer | null = null;
 let objects: Array<GameObject> = [];
 let prevFrame = now();
 let FPS = 0;
+let avgFPS = 0;
+let framesPassed = 0;
 
 async function main() {
   let canvas = document.querySelector("canvas");
@@ -25,7 +29,10 @@ async function main() {
   } catch (err) {
     throw new Error("Failed to initialize renderer.");
   }
-  for (let i = 0; i < 100; ++i) {
+  let player = spawnGameObject(0.0, 0.0, 0.5, RED);
+  player.setBehaviourFunction(new PlayerControls(player));
+  player.setBehaviourFunction(new BorderCollision(player));
+  for (let i = 0; i < 15; ++i) {
     let obj = spawnGameObject(rand(-0.75, 0.75), rand(-0.75, 0.75), 0.5, new Float32Array([rand(0, 1), rand(0, 1), rand(0, 1), 1]));
     obj.setBehaviourFunction(new WanderAround(obj, 0.001));
   }
@@ -53,14 +60,18 @@ function update(deltaTime: number) {
 function gameLoop() {
   const currentFrame = now();
   const deltaTime = currentFrame - prevFrame;
+  framesPassed++;
 
   if (renderer) {
     update(deltaTime);
     renderer.render();
     FPS = 1000 / deltaTime;
-    if (geometryCounter && fpsCounter) {
+    avgFPS += FPS;
+    if (geometryCounter && fpsCounter && renderMode && avgFramerate) {
+      renderMode.innerHTML = "Renderer: " + renderer.currentAPI;
       geometryCounter.innerHTML = gcText + renderer.geometryCount;
       fpsCounter.innerHTML = fpsText + FPS.toFixed(0);
+      avgFramerate.innerHTML = "Avg FPS: " + (avgFPS / framesPassed).toFixed(0);
     }
   }
   requestAnimationFrame(gameLoop);

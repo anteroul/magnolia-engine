@@ -12,6 +12,7 @@ export class Renderable {
   public vertexBuffer?: GPUBuffer;
   public colorBuffer?: GPUBuffer;
   public uniformBuffer?: GPUBuffer;
+
   public vertexCount: number;
 
   constructor(handle: Renderer, pos: vec2, size: vec2, color: vec4) {

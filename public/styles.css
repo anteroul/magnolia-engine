@@ -10,16 +10,30 @@ canvas {
   height: 85%;
 }
 
+#renderMode {
+  color: yellow;
+  font-weight: bolder;
+  font-size: clamp(12px, 0.5vw, 10px);
+  padding-left: 5%;
+}
+
 #geometry {
   color: lime;
   font-weight: bolder;
-  font-size: relative;
+  font-size: clamp(12px, 0.5vw, 10px);
   padding-left: 5%;
 }
 
 #framerate {
   color: red;
   font-weight: bolder;
-  font-size: relative;
+  font-size: clamp(12px, 0.5vw, 10px);
+  padding-left: 5%;
+}
+
+#avgFramerate {
+  color: white;
+  font-weight: bolder;
+  font-size: clamp(12px, 0.5vw, 10px);
   padding-left: 5%;
 }

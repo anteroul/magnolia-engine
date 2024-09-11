@@ -1,6 +1,6 @@
 {
-  "name": "MagnoliaEngine",
-  "version": "0.2.2",
+  "name": "magnolia-engine",
+  "version": "0.2.4",
   "description": "WebGPU/WebGL rendering engine",
   "main": "index.js",
   "scripts": {
