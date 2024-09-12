@@ -15,12 +15,10 @@ export class WanderAround extends BehaviourScript {
     
     update() {
         if (this.gameObject.position[0] + (this.gameObject.scale[0] / 2) > 1 || this.gameObject.position[0] - (this.gameObject.scale[0] / 2) < -1) {
-            this.gameObject.ricochet(this.gameObject.velocity[0]);
             this.waypoint[0] *= -1;
         }
     
         if (this.gameObject.position[1] + (this.gameObject.scale[1] / 2) > 1 || this.gameObject.position[1] - (this.gameObject.scale[1] / 2) < -1) {
-            this.gameObject.ricochet(this.gameObject.velocity[1]);
             this.waypoint[1] *= -1;
         }
         

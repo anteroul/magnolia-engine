@@ -57,7 +57,6 @@ export class Renderable {
         mappedAtCreation: false,
       });
     }
-
     this.vertexCount = this.vertexData.length / 2; // Since we are using 2D triangles
   }
 

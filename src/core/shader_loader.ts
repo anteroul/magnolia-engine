@@ -54,7 +54,6 @@ export class ShaderLoader {
     async loadShaderGL(url: RequestInfo | URL, gl: WebGL2RenderingContext | WebGLRenderingContext): Promise<WebGLProgram | null> {
         const response = await fetch(url);
         const source = await response.text();
-        //console.log(source);
         const [vertexShaderSource, fragmentShaderSource] = source.split("//Fragment shader");
         
         let vertexShader = gl.createShader(gl.VERTEX_SHADER);
