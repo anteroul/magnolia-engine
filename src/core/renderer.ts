@@ -57,10 +57,10 @@ export class Renderer {
         } else {
             // WebGL initialization
             if (!this._ctx) {
-                this._ctx = <WebGLRenderingContext>this._canvas.getContext("webgl");
+                this._ctx = <WebGLRenderingContext>this._canvas.getContext("webgl2");
                 if (!this._ctx) {
                     console.log("Failed to initialize WebGL2. Switching to legacy WebGL.");
-                    this._ctx = <WebGLRenderingContext>this._canvas.getContext("experimental-webgl");
+                    this._ctx = <WebGLRenderingContext>this._canvas.getContext("webgl");
                 }
             }
             this._shaderProgram = await this.shaderLoader.load("./src/shaders/triangle.glsl");
@@ -108,7 +108,6 @@ export class Renderer {
         } else {
             const program = this.glProgram;
             this.ctxGL.clearColor(0.0, 0.0, 0.0, 1.0);
-            this.ctxGL.clearDepth(1.0);
             this.ctxGL.clear(this.ctxGL.COLOR_BUFFER_BIT);
 
             this.renderQueue.forEach(renderable => {
