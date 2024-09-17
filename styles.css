@@ -1,0 +1,41 @@
+html, body {
+  background-color: black;
+  margin: 0; /* remove the default margin */
+  height: 100%; /* make the html,body fill the page */
+}
+
+.UI {
+  font-weight: bolder;
+  font-size: clamp(12px, 1vw, 12px);
+  display: flex;
+  justify-content: space-around; /* Align items with space between */
+  align-items: center; /* Align items vertically in the center */
+  padding-inline-start: 20%;
+  padding-inline-end: 20%;
+}
+
+.controls {
+  color: white;
+  flex-direction: column;
+}
+
+#renderMode {
+  color: yellow;
+}
+
+#geometry {
+  color: lime;
+}
+
+#framerate {
+  color: red;
+}
+
+#avgFramerate {
+  color: white;
+}
+
+canvas {
+  width: 100%; /* make the canvas fill its container */
+  height: 80%;
+}
