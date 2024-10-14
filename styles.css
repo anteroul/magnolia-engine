@@ -8,8 +8,6 @@ html, body {
   font-weight: bolder;
   font-size: clamp(12px, 1vw, 12px);
   display: flex;
-  justify-content: space-around; /* Align items with space between */
-  align-items: center; /* Align items vertically in the center */
   padding-inline-start: 20%;
   padding-inline-end: 20%;
 }
