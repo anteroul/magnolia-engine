@@ -2,7 +2,7 @@
   "name": "magnolia-engine",
   "version": "0.3.1",
   "description": "WebGPU/WebGL rendering engine",
-  "main": "index.js",
+  "main": "app.ts",
   "scripts": {
     "start": "npm run install-dependencies && npm run build && npm run serve",
     "install-dependencies": "npm i",

@@ -21,7 +21,7 @@ let framesPassed = 0;
 
 async function main() {
   let canvas = document.querySelector("canvas");
-  renderer = new Renderer(canvas, canvas?.getContext("webgpu"));
+  renderer = new Renderer(canvas, canvas?.getContext("webgl2"));
   try {
     await renderer.init();
   } catch (err) {
