@@ -107,8 +107,6 @@ export class Renderer {
                     ],
                 });
                 passEncoder.setBindGroup(0, bindGroup);
-                passEncoder.setVertexBuffer(0, <GPUBuffer>renderable.vertexBuffer);
-                passEncoder.setVertexBuffer(1, <GPUBuffer>renderable.colorBuffer);
                 passEncoder?.draw(renderable.vertexCount, 1, 0, 0);
             });
             passEncoder?.end();

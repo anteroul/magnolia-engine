@@ -21,13 +21,13 @@ let framesPassed = 0;
 
 async function main() {
   let canvas = document.querySelector("canvas");
-  renderer = new Renderer(canvas, canvas?.getContext("webgl2"));
+  renderer = new Renderer(canvas, canvas?.getContext("webgpu"));
   try {
     await renderer.init();
   } catch (err) {
     throw new Error("Failed to initialize renderer.");
   }
-  for (let i = 0; i < 300; ++i) {
+  for (let i = 0; i < 500; ++i) {
     let obj = spawnGameObject(rand(-0.75, 0.75), rand(-0.75, 0.75), 0.3, new Float32Array([rand(0, 1), rand(0, 1), rand(0, 1), 1]));
     obj.setBehaviourFunction(new WanderAround(obj, 0.001));
     obj.setBehaviourFunction(new BorderCollision(obj));

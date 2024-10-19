@@ -1,4 +1,4 @@
-# Magnolia WebGL/WebGPU Benchmarker v0.3.1
+# Magnolia WebGL/WebGPU Benchmarker v0.3.2
 ### Browser based WebGL/WebGPU benchmarker written in TypeScript.
 
 ### Changes:
@@ -7,4 +7,3 @@
 
 ### TODO:
 - Scenes and SceneManager implementation
-- Optimization for WebGL and WebGPU rendering
