@@ -8,12 +8,10 @@ export class BorderCollision extends BehaviourScript {
     
     update() {
         if (this.gameObject.position[0] + (this.gameObject.scale[0] / 2) > 1 || this.gameObject.position[0] - (this.gameObject.scale[0] / 2) < -1) {
-            this.gameObject.position[0] + (this.gameObject.velocity[0] * -1 / 100);
             this.gameObject.ricochet(this.gameObject.velocity[0]);
         }
     
         if (this.gameObject.position[1] + (this.gameObject.scale[1] / 2) > 1 || this.gameObject.position[1] - (this.gameObject.scale[1] / 2) < -1) {
-            this.gameObject.position[0] + (this.gameObject.velocity[0] * -1 / 100);
             this.gameObject.ricochet(this.gameObject.velocity[1]);
         }
     }
