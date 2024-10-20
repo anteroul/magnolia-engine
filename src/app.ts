@@ -5,6 +5,7 @@ import { Renderable } from "./core/renderable";
 import { GameObject } from "./core/game_object";
 import { WanderAround } from "./scripts/behaviour";
 import { BorderCollision } from "./scripts/collisions";
+import { API } from "./core/render_modes";
 
 const gcText = "Spawned Geometry: ";
 const fpsText = "FPS: ";
@@ -21,7 +22,7 @@ let framesPassed = 0;
 
 async function main() {
   let canvas = document.querySelector("canvas");
-  renderer = new Renderer(canvas, canvas?.getContext("webgpu"));
+  renderer = new Renderer(canvas, canvas?.getContext(API.WEBGPU));
   try {
     await renderer.init();
   } catch (err) {

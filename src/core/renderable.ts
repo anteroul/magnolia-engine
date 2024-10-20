@@ -12,6 +12,9 @@ export class Renderable {
   public vertexBuffer?: GPUBuffer;
   public colorBuffer?: GPUBuffer;
   public uniformBuffer?: GPUBuffer;
+  // for WebGL rendering:
+  public glVertexBuffer?: WebGLBuffer;
+  public glColorBuffer?: WebGLBuffer;
 
   public vertexCount: number;
 
@@ -56,8 +59,32 @@ export class Renderable {
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         mappedAtCreation: false,
       });
+    } else {
+      this.glVertexBuffer = <WebGLBuffer> handle.ctxGL.createBuffer();
+      handle.ctxGL.bindBuffer(handle.ctxGL.ARRAY_BUFFER, this.glVertexBuffer);
+      handle.ctxGL.bufferData(handle.ctxGL.ARRAY_BUFFER, this._vertexData, handle.ctxGL.STATIC_DRAW);
+
+      this.glColorBuffer = <WebGLBuffer> handle.ctxGL.createBuffer();
+      handle.ctxGL.bindBuffer(handle.ctxGL.ARRAY_BUFFER, this.glColorBuffer);
+      handle.ctxGL.bufferData(handle.ctxGL.ARRAY_BUFFER, this._colorData, handle.ctxGL.STATIC_DRAW);
     }
     this.vertexCount = this.vertexData.length / 2; // Since we are using 2D triangles
+  }
+
+  private generateVertexData(): Float32Array {
+    return new Float32Array([
+      this._position[0], this._position[1] + (this._scale[1] / 2),
+      this._position[0] - (this._scale[0] / 2), this._position[1] - (this._scale[1] / 2),
+      this._position[0] + (this._scale[0] / 2), this._position[1] - (this._scale[1] / 2),
+    ]);
+  }
+
+  private generateColorData(): Float32Array {
+    return new Float32Array([
+      this._color[0], this._color[1], this._color[2], this._color[3],
+      this._color[0], this._color[1], this._color[2], this._color[3],
+      this._color[0], this._color[1], this._color[2], this._color[3],
+    ]);
   }
 
   get position() {
@@ -80,11 +107,18 @@ export class Renderable {
     return this._colorData;
   }
 
+  changeColor(color: vec4) {
+    this._color = color;
+    this._colorData = this.generateColorData();
+  }
+
   translate(pos: vec2) {
     this._position = pos;
+    this._vertexData = this.generateVertexData();
   }
 
   setScale(s: vec2) {
     this._scale = s;
+    this._vertexData = this.generateVertexData();
   }
 }
