@@ -4,10 +4,11 @@
   "description": "WebGPU/WebGL rendering engine",
   "main": "app.ts",
   "scripts": {
-    "start": "npm run install-dependencies && npm run build && npm run serve",
+    "start": "npm run install-dependencies && npm run dev",
     "install-dependencies": "npm i",
-    "build": "vite",
-    "serve": "http-server"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "author": "Antero Lindell",
   "license": "ISC",
