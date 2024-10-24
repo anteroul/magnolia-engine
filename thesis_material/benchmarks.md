@@ -10,13 +10,20 @@ RAM: 32 GB \
 OS: Arch Linux x86_64 \
 Browser: Mozilla Firefox 131.0.3 \
 \
+\
 <b>Benchmarks on <u>v0.3.3</u></b> \
 \
 Renderer: WebGL \
-Geometry: 500 \
-Avg FPS: 168
-
+Geometry: 3500 \
+Avg FPS: 145 \
+\
+<b>Benchmarks on <u>v0.3.2</u></b> \
+\
+Renderer: WebGL \
+Geometry: 3500 \
+Avg FPS: 67
 ***
+
 <b>Specs:</b> \
 CPU: AMD Ryzen 7 5800X (8C/16) @ 4.851 GHz \
 GPU: AMD ATI Radeon RX 6900 XT (16GB) \
@@ -51,13 +58,22 @@ Browser: Microsoft Edge 129.0.2792.52 \
 <b>Benchmarks on <u>v0.3.3</u></b> \
 \
 Renderer: WebGPU \
-Geometry: 500 \
-Avg FPS: 40 \
+Geometry: 150 \
+Avg FPS: 162 \
 \
 Renderer: WebGL \
-Geometry: 500 \
-Avg FPS: 165
-
+Geometry: 3000 \
+Avg FPS: 149 \
+\
+<b>Benchmarks on <u>v0.3.2</u></b> \
+\
+Renderer: WebGPU \
+Geometry: 150 \
+Avg FPS: 160 \
+\
+Renderer: WebGL \
+Geometry: 170 \
+Avg FPS: 150 \
 
 ***
 <b>Specs:</b> \
