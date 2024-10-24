@@ -2,9 +2,8 @@
 ### Browser based WebGL/WebGPU benchmarker written in TypeScript.
 
 ### Changes:
-- Optimizations to WebGL implementation.
-- WebGL/WebGPU support
-- Basic "ECS"-style functionality to allow user defined functionality for individual GameObjects.
+- Optimizations to WebGL implementation
 
 ### TODO:
+- Optimizations to WebGPU implementation
 - Scenes and SceneManager implementation
