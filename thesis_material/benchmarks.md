@@ -73,7 +73,7 @@ Avg FPS: 160 \
 \
 Renderer: WebGL \
 Geometry: 170 \
-Avg FPS: 150 \
+Avg FPS: 150
 
 ***
 <b>Specs:</b> \
