@@ -97,7 +97,7 @@ Avg FPS: 32
 
 ***
 <b>Specs:</b> \
-CPU: Intel Core i3-1115G4 @ 3.0 GHz \
+CPU: Intel Core i3-1115G4 (2C/4T) @ 3.0 GHz \
 GPU: Intel UHD Graphics \
 RAM: 12 GB \
 OS: Windows 11 \
@@ -123,6 +123,36 @@ Avg FPS: 38 \
 Renderer: WebGL \
 Geometry: 500 \
 Avg FPS: 12
+
+
+***
+<b>Specs:</b> \
+CPU: AMD Ryzen 7 5800X (8C/16T) @ 3.8 GHz \
+GPU: AMD Radeon RX 6600 (8GB) \
+RAM: 32 GB \
+OS: Linux Mint x86_64 \
+Browser: Firefox Nightly 133.0a1 \
+\
+\
+<b>Benchmarks on <u>v0.3.3</u></b> \
+\
+Renderer: WebGPU \
+Geometry: 500 \
+Avg FPS: 37 \
+\
+Renderer: WebGL \
+Geometry: 5000 \
+Avg FPS: 67 \
+\
+<b>Benchmarks on <u>v0.3.2</u></b> \
+\
+Renderer: WebGPU \
+Geometry: 500 \
+Avg FPS: 40 \
+\
+Renderer: WebGL \
+Geometry: 2500 \
+Avg FPS: 52
 
 
 ***
