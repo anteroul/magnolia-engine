@@ -67,7 +67,7 @@ export class Renderer {
                 this._ctx = <WebGLRenderingContext>this._canvas.getContext("experimental-webgl");
             }
 
-            this._shaderProgram = await this.shaderLoader.load("./src/shaders/triangle.glsl");
+            this._shaderProgram = <WebGLProgram> await this.shaderLoader.load("./src/shaders/triangle.glsl");
             // initialization finished
         }
         console.log(this.currentAPI + " initialized.");
@@ -140,7 +140,7 @@ export class Renderer {
         }
     }
 
-    getUniformDataForRenderable(renderable: Renderable): { buffer: ArrayBuffer } {
+    private getUniformDataForRenderable(renderable: Renderable): { buffer: ArrayBuffer } {
         const uniformData = new Float32Array(16);
         uniformData.set(renderable.position, 0); // set the position
         uniformData.set(renderable.scale, 2); // set the scale
@@ -160,7 +160,7 @@ export class Renderer {
         return { buffer: uniformData.buffer };
     }
 
-    setPositionAttribute(ctx: WebGL2RenderingContext | WebGLRenderingContext, renderable: Renderable) {
+    private setPositionAttribute(ctx: WebGL2RenderingContext | WebGLRenderingContext, renderable: Renderable) {
         const numComponents = 2; // Number of values per vertex
         const type = ctx.FLOAT; // 32-bit floats
         const normalize = false;
@@ -179,7 +179,7 @@ export class Renderer {
         ctx.enableVertexAttribArray(ctx.getAttribLocation(this.glProgram, "aVertexPosition"));
     }
 
-    setColorAttribute(ctx: WebGL2RenderingContext | WebGLRenderingContext, renderable: Renderable) {
+    private setColorAttribute(ctx: WebGL2RenderingContext | WebGLRenderingContext, renderable: Renderable) {
         const numComponents = 4;
         const type = ctx.FLOAT;
         const normalize = false;

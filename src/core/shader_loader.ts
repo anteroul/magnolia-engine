@@ -34,24 +34,22 @@ export class ShaderLoader {
         this._handle = renderer;
     }
 
-    async load(url: RequestInfo | URL): Promise<GPUShaderModule | WebGLProgram> {
-        let shader: GPUShaderModule | WebGLProgram | null = null;
-        if (this._handle.ctx instanceof GPUCanvasContext) {
-            shader = this.loadShaderWGPU(url, this._handle.device);
-        } else {
-            shader = this.loadShaderGL(url, this._handle.ctx);
+    async load(url: RequestInfo | URL): Promise<GPUShaderModule | WebGLProgram | null> {
+        if (this._handle.currentAPI === "WebGPU") {
+            return this.loadShaderWGPU(url, this._handle.device);
+        } else if (this._handle.ctxGL) {
+            return this.loadShaderGL(url, this._handle.ctxGL);
         }
-        if (!shader) return this._handle.device.createShaderModule({code: SAMPLE_SHADER});
-        return shader;
+        return null;
     }
 
-    async loadShaderWGPU(url: RequestInfo | URL, device: GPUDevice): Promise<GPUShaderModule> {
+    private async loadShaderWGPU(url: RequestInfo | URL, device: GPUDevice): Promise<GPUShaderModule> {
         const response = await fetch(url);
         const source = await response.text();
         return device.createShaderModule({ code: source });
     }
 
-    async loadShaderGL(url: RequestInfo | URL, gl: WebGL2RenderingContext | WebGLRenderingContext): Promise<WebGLProgram | null> {
+    private async loadShaderGL(url: RequestInfo | URL, gl: WebGL2RenderingContext | WebGLRenderingContext): Promise<WebGLProgram | null> {
         const response = await fetch(url);
         const source = await response.text();
         const [vertexShaderSource, fragmentShaderSource] = source.split("//Fragment shader");

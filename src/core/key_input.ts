@@ -1,4 +1,4 @@
-module KeyInputManager {
+namespace KeyInputManager {
     let keysDown: Array<string> = [];
 
     // Add event listeners for keyboard input
