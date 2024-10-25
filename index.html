@@ -16,18 +16,6 @@
             <p id="framerate"></p>
             <p id="avgFramerate"></p>
         </div>
-        <div class="controls">
-            <p>Renderer:</p>
-            <select id="renderer" name="renderer">
-                <option value="webgpu">WebGPU</option>
-                <option value="webgl2">WebGL</option>
-            </select>
-            <p>Renderables:</p>
-            <form id="triangles">
-                <input type="text" id="spawnedObjects" name="spawnedObjects"><br>
-                <input type="submit" value="Submit">
-            </form>
-        </div>
     </div>
     <canvas width="1280" height="720"></canvas>
     <script type="module" src="./src/app.ts"></script>
