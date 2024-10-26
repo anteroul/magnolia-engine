@@ -156,3 +156,67 @@ Avg FPS: 52
 
 
 ***
+<b>Specs:</b> \
+CPU: AMD Ryzen 7 5800X (8C/16T) @ 3.8 GHz \
+GPU: AMD Radeon RX 6600 (8GB) \
+RAM: 32 GB \
+OS: Windows 11 \
+Browser: Microsoft Edge 130.0.2849.56 \
+\
+\
+<b>Benchmarks on <u>v0.3.3</u></b> \
+\
+Renderer: WebGPU \
+Geometry: 500 \
+Avg FPS: 68 \
+\
+Renderer: WebGL \
+Geometry: 500 \
+Avg FPS: 75 \
+\
+Renderer: WebGPU \
+Geometry: 1500 \
+Avg FPS: 13 \
+\
+Renderer: WebGL \
+Geometry: 1500 \
+Avg FPS: 75 \
+\
+Renderer: WebGPU \
+Geometry: 10000 \
+Avg FPS: 1 \
+\
+Renderer: WebGL \
+Geometry: 10000 \
+Avg FPS: 54 \
+\
+<b>Benchmarks on <u>v0.3.2</u></b> \
+\
+Renderer: WebGPU \
+Geometry: 500 \
+Avg FPS: 67 \
+\
+Renderer: WebGL \
+Geometry: 500 \
+Avg FPS: 23 \
+\
+Renderer: WebGPU \
+Geometry: 1000 \
+Avg FPS: 25 \
+\
+Renderer: WebGL \
+Geometry: 1000 \
+Avg FPS: 16 \
+\
+<b>Benchmarks on <u>v0.3.1</u></b> \
+\
+Renderer: WebGPU \
+Geometry: 500 \
+Avg FPS: 60 \
+\
+Renderer: WebGL \
+Geometry: 500 \
+Avg FPS: 23
+
+
+***
