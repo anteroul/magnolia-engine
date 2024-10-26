@@ -12,6 +12,7 @@ export class Renderable {
   public vertexBuffer?: GPUBuffer;
   public colorBuffer?: GPUBuffer;
   public uniformBuffer?: GPUBuffer;
+  public bindGroup?: GPUBindGroup;
   // for WebGL rendering:
   public glVertexBuffer?: WebGLBuffer;
   public glColorBuffer?: WebGLBuffer;
@@ -24,16 +25,34 @@ export class Renderable {
     this._color = color;
 
     this._vertexData = new Float32Array([
-      this._position[0], this._position[1] + (this._scale[1] / 2),
-      this._position[0] - (this._scale[0] / 2), this._position[1] - (this._scale[1] / 2),
-      this._position[0] + (this._scale[0] / 2), this._position[1] - (this._scale[1] / 2)
+      this._position[0],
+      this._position[1] + this._scale[1] / 2,
+      this._position[0] - this._scale[0] / 2,
+      this._position[1] - this._scale[1] / 2,
+      this._position[0] + this._scale[0] / 2,
+      this._position[1] - this._scale[1] / 2,
     ]);
 
     this._colorData = new Float32Array([
-      this._color[0], this._color[1], this._color[2], this._color[3],
-      this._color[0], this._color[1], this._color[2], this._color[3],
-      this._color[0], this._color[1], this._color[2], this._color[3],
-      this._color[0], this._color[1], this._color[2], this._color[3]
+      this._color[0],
+      this._color[1],
+      this._color[2],
+      this._color[3],
+
+      this._color[0],
+      this._color[1],
+      this._color[2],
+      this._color[3],
+
+      this._color[0],
+      this._color[1],
+      this._color[2],
+      this._color[3],
+      
+      this._color[0],
+      this._color[1],
+      this._color[2],
+      this._color[3],
     ]);
 
     if (handle.currentAPI === "WebGPU") {
@@ -42,7 +61,9 @@ export class Renderable {
         usage: GPUBufferUsage.VERTEX,
         mappedAtCreation: true,
       });
-      new Float32Array(this.vertexBuffer.getMappedRange()).set(this._vertexData);
+      new Float32Array(this.vertexBuffer.getMappedRange()).set(
+        this._vertexData
+      );
       this.vertexBuffer.unmap();
 
       this.colorBuffer = handle.device.createBuffer({
@@ -59,31 +80,78 @@ export class Renderable {
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
         mappedAtCreation: false,
       });
-    } else {
-      this.glVertexBuffer = <WebGLBuffer> handle.ctxGL.createBuffer();
-      handle.ctxGL.bindBuffer(handle.ctxGL.ARRAY_BUFFER, this.glVertexBuffer);
-      handle.ctxGL.bufferData(handle.ctxGL.ARRAY_BUFFER, this._vertexData, handle.ctxGL.STATIC_DRAW);
 
-      this.glColorBuffer = <WebGLBuffer> handle.ctxGL.createBuffer();
+      this.bindGroup = handle.device.createBindGroup({
+        layout: <GPUBindGroupLayout>handle.pipeline.getBindGroupLayout(0),
+        entries: [
+          {
+            binding: 0,
+            resource: {
+              buffer: this.uniformBuffer,
+            },
+          },
+        ],
+      });
+    } else {
+      this.glVertexBuffer = <WebGLBuffer>handle.ctxGL.createBuffer();
+      handle.ctxGL.bindBuffer(handle.ctxGL.ARRAY_BUFFER, this.glVertexBuffer);
+      handle.ctxGL.bufferData(
+        handle.ctxGL.ARRAY_BUFFER,
+        this._vertexData,
+        handle.ctxGL.STATIC_DRAW
+      );
+
+      this.glColorBuffer = <WebGLBuffer>handle.ctxGL.createBuffer();
       handle.ctxGL.bindBuffer(handle.ctxGL.ARRAY_BUFFER, this.glColorBuffer);
-      handle.ctxGL.bufferData(handle.ctxGL.ARRAY_BUFFER, this._colorData, handle.ctxGL.STATIC_DRAW);
+      handle.ctxGL.bufferData(
+        handle.ctxGL.ARRAY_BUFFER,
+        this._colorData,
+        handle.ctxGL.STATIC_DRAW
+      );
     }
     this.vertexCount = this.vertexData.length / 2; // Since we are using 2D triangles
   }
 
+  updateBuffers(handle: Renderer) {
+    if (handle.currentAPI === "WebGPU") {
+      const uniformData = new Float32Array(16);
+      uniformData.set(this._position, 0);
+      uniformData.set(this._scale, 2);
+      uniformData.set(this._color, 4);
+
+      handle.device.queue.writeBuffer(
+        this.uniformBuffer!,
+        0,
+        uniformData.buffer
+      );
+    }
+  }
+
   private generateVertexData(): Float32Array {
     return new Float32Array([
-      this._position[0], this._position[1] + (this._scale[1] / 2),
-      this._position[0] - (this._scale[0] / 2), this._position[1] - (this._scale[1] / 2),
-      this._position[0] + (this._scale[0] / 2), this._position[1] - (this._scale[1] / 2),
+      this._position[0],
+      this._position[1] + this._scale[1] / 2,
+      this._position[0] - this._scale[0] / 2,
+      this._position[1] - this._scale[1] / 2,
+      this._position[0] + this._scale[0] / 2,
+      this._position[1] - this._scale[1] / 2,
     ]);
   }
 
   private generateColorData(): Float32Array {
     return new Float32Array([
-      this._color[0], this._color[1], this._color[2], this._color[3],
-      this._color[0], this._color[1], this._color[2], this._color[3],
-      this._color[0], this._color[1], this._color[2], this._color[3],
+      this._color[0],
+      this._color[1],
+      this._color[2],
+      this._color[3],
+      this._color[0],
+      this._color[1],
+      this._color[2],
+      this._color[3],
+      this._color[0],
+      this._color[1],
+      this._color[2],
+      this._color[3],
     ]);
   }
 

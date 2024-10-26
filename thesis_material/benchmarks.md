@@ -164,6 +164,16 @@ OS: Windows 11 \
 Browser: Microsoft Edge 130.0.2849.56 \
 \
 \
+<b>Benchmarks on <u>v0.3.5</u></b> \
+\
+Renderer: WebGPU \
+Geometry: 5000 \
+Avg FPS: 58 \
+\
+Renderer: WebGL \
+Geometry: 5000 \
+Avg FPS: 68 \
+\
 <b>Benchmarks on <u>v0.3.3</u></b> \
 \
 Renderer: WebGPU \

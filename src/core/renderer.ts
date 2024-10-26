@@ -2,6 +2,7 @@ import { mat3 } from "gl-matrix";
 import { createRenderPipeline } from "./pipeline";
 import { Renderable } from "./renderable";
 import { ShaderLoader } from "./shader_loader";
+import { Shader } from "./shader";
 
 export class Renderer {
     private _canvas: HTMLCanvasElement;
@@ -16,6 +17,7 @@ export class Renderer {
 
     public renderQueue: Array<Renderable> = [];
     public shaderLoader: ShaderLoader;
+    public shader?: Shader;
 
     constructor(canvas: HTMLCanvasElement | null, renderMode: any) {
         this._canvas = <HTMLCanvasElement>canvas;
@@ -60,14 +62,14 @@ export class Renderer {
             // initialization finished
         } else {
             // WebGL initialization:
-            this._ctx = <WebGL2RenderingContext> this._canvas.getContext("webgl2");
+            this._ctx = <WebGL2RenderingContext>this._canvas.getContext("webgl2");
 
             if (!this._ctx) {
                 console.log("Failed to initialize WebGL2. Switching to legacy WebGL.");
                 this._ctx = <WebGLRenderingContext>this._canvas.getContext("experimental-webgl");
             }
 
-            this._shaderProgram = <WebGLProgram> await this.shaderLoader.load("./src/shaders/triangle.glsl");
+            this._shaderProgram = <WebGLProgram>await this.shaderLoader.load("./src/shaders/triangle.glsl");
             // initialization finished
         }
         console.log(this.currentAPI + " initialized.");
@@ -92,24 +94,10 @@ export class Renderer {
             passEncoder?.setPipeline(<GPURenderPipeline>this._pipeline);
 
             this.renderQueue.forEach((renderable) => {
-                const uniformData = this.getUniformDataForRenderable(renderable).buffer;
-                this.device.queue.writeBuffer(
-                    <GPUBuffer>renderable.uniformBuffer,
-                    0,
-                    uniformData
-                );
-                const bindGroup = this.device.createBindGroup({
-                    layout: <GPUBindGroupLayout>this._pipeline?.getBindGroupLayout(0),
-                    entries: [
-                        {
-                            binding: 0,
-                            resource: {
-                                buffer: <GPUBuffer>renderable.uniformBuffer,
-                            },
-                        },
-                    ],
-                });
-                passEncoder.setBindGroup(0, bindGroup);
+                renderable.updateBuffers(this);
+                passEncoder.setVertexBuffer(0, renderable.vertexBuffer!);
+                passEncoder.setVertexBuffer(1, renderable.colorBuffer!);
+                passEncoder.setBindGroup(0, renderable.bindGroup!);
                 passEncoder?.draw(renderable.vertexCount, 1, 0, 0);
             });
             passEncoder?.end();
@@ -121,43 +109,31 @@ export class Renderer {
             this.ctxGL.clear(this.ctxGL.COLOR_BUFFER_BIT);
 
             this.renderQueue.forEach((renderable) => {
-                this.setPositionAttribute(this.ctxGL, renderable);
-                this.setColorAttribute(this.ctxGL, renderable);
-                this.ctxGL.useProgram(program);
+                if (this.shader?.shader instanceof WebGLProgram && this.shader?.hasTMat()) {
+                    this.setPositionAttribute(this.ctxGL, renderable);
+                    this.setColorAttribute(this.ctxGL, renderable);
+                    this.ctxGL.useProgram(program);
 
-                const translationMatrix = mat3.create();
-                mat3.translate(translationMatrix, translationMatrix, renderable.position);
+                    const translationMatrix = mat3.create();
+                    mat3.translate(translationMatrix, translationMatrix, renderable.position);
 
-                // Update uniform matrix
-                this.ctxGL.uniformMatrix3fv(
-                    this.ctxGL.getUniformLocation(program, "uTranslationMatrix"),
-                    false,
-                    translationMatrix
-                );
-
-                this.ctxGL.drawArrays(this.ctxGL.TRIANGLES, 0, renderable.vertexCount);
+                    // Update uniform matrix
+                    this.ctxGL.uniformMatrix3fv(
+                        this.ctxGL.getUniformLocation(program, "uTranslationMatrix"),
+                        false,
+                        translationMatrix
+                    );
+                    this.ctxGL.drawArrays(this.ctxGL.TRIANGLES, 0, renderable.vertexCount);
+                } else {
+                    this.ctxGL.bindBuffer(this.ctxGL.ARRAY_BUFFER, <WebGLBuffer>renderable.glVertexBuffer);
+                    this.ctxGL.bufferData(this.ctxGL.ARRAY_BUFFER, renderable.vertexData, this.ctxGL.DYNAMIC_DRAW); // Use DYNAMIC_DRAW
+                    this.setPositionAttribute(this.ctxGL, renderable);
+                    this.setColorAttribute(this.ctxGL, renderable);
+                    this.ctxGL.useProgram(program);
+                    this.ctxGL.drawArrays(this.ctxGL.TRIANGLES, 0, renderable.vertexCount);
+                }
             });
         }
-    }
-
-    private getUniformDataForRenderable(renderable: Renderable): { buffer: ArrayBuffer } {
-        const uniformData = new Float32Array(16);
-        uniformData.set(renderable.position, 0); // set the position
-        uniformData.set(renderable.scale, 2); // set the scale
-        uniformData.set(renderable.color, 4); // set the color
-
-        renderable.uniformBuffer = this.device.createBuffer({
-            label: "triangle uniform",
-            size: uniformData.byteLength,
-            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-            mappedAtCreation: true,
-        });
-        new Float32Array(renderable.uniformBuffer.getMappedRange()).set(
-            uniformData
-        );
-        renderable.uniformBuffer.unmap();
-        // Populate `uniformData` as needed for each renderable
-        return { buffer: uniformData.buffer };
     }
 
     private setPositionAttribute(ctx: WebGL2RenderingContext | WebGLRenderingContext, renderable: Renderable) {
@@ -167,7 +143,7 @@ export class Renderer {
         const stride = 0; // Use the defaults
         const offset = 0;
 
-        ctx.bindBuffer(ctx.ARRAY_BUFFER, <WebGLBuffer> renderable.glVertexBuffer);
+        ctx.bindBuffer(ctx.ARRAY_BUFFER, <WebGLBuffer>renderable.glVertexBuffer);
         ctx.vertexAttribPointer(
             ctx.getAttribLocation(this.glProgram, "aVertexPosition"),
             numComponents,
@@ -186,7 +162,7 @@ export class Renderer {
         const stride = 0;
         const offset = 0;
 
-        ctx.bindBuffer(ctx.ARRAY_BUFFER, <WebGLBuffer> renderable.glColorBuffer);
+        ctx.bindBuffer(ctx.ARRAY_BUFFER, <WebGLBuffer>renderable.glColorBuffer);
         ctx.vertexAttribPointer(
             ctx.getAttribLocation(this.glProgram, "aVertexColor"),
             numComponents,
