@@ -11,4 +11,8 @@ export default defineConfig({
   esbuild: {
     target: "esnext",
   },
+  // Make sure source files are processed
+  resolve: {
+    extensions: [".ts", ".js", ".glsl", ".wgsl"],
+  },
 });
