@@ -74,8 +74,8 @@ Avg FPS: 160 \
 Renderer: WebGL \
 Geometry: 170 \
 Avg FPS: 150
-
 ***
+
 <b>Specs:</b> \
 CPU: Apple M1 (8C) @ 3.2 GHz \
 GPU: Apple M1 \
@@ -83,6 +83,16 @@ RAM: 8 GB \
 OS: MacOS Sequoia \
 Browser: Safari 17.4.1 \
 \
+\
+<b>Benchmarks on <u>v0.3.5</u></b> \
+\
+Renderer: WebGPU \
+Geometry: 6000 \
+Avg FPS: 48 \
+\
+Renderer: WebGL \
+Geometry: 6000 \
+Avg FPS: 6 \
 \
 <b>Benchmarks on <u>v0.3.3</u></b> \
 \
@@ -93,7 +103,7 @@ Avg FPS: 34 \
 Renderer: WebGL \
 Geometry: 1000 \
 Avg FPS: 32
-
+***
 
 ***
 <b>Specs:</b> \
