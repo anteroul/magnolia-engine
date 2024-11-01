@@ -1,8 +1,7 @@
 import { mat3 } from "gl-matrix";
 import { createRenderPipeline } from "./pipeline";
 import { Renderable } from "./renderable";
-import { ShaderLoader } from "./shader_loader";
-import { Shader } from "./shader";
+import { loadShaderGL, loadShaderWGPU } from "./shader_loader";
 
 export class Renderer {
     private _canvas: HTMLCanvasElement;
@@ -16,13 +15,10 @@ export class Renderer {
     private _shaderProgram?: WebGLProgram;
 
     public renderQueue: Array<Renderable> = [];
-    public shaderLoader: ShaderLoader;
-    public shader?: Shader;
 
     constructor(canvas: HTMLCanvasElement | null, renderMode: any) {
         this._canvas = <HTMLCanvasElement>canvas;
         this._ctx = renderMode;
-        this.shaderLoader = new ShaderLoader(this);
     }
 
     async init() {
@@ -55,7 +51,7 @@ export class Renderer {
                 this._pipeline = await createRenderPipeline(
                     this._device,
                     <GPUShaderModule>(
-                        await this.shaderLoader.load("./src/shaders/triangle.wgsl")
+                        await loadShaderWGPU("./shaders/triangle.wgsl", this._device)
                     )
                 );
             }
@@ -69,7 +65,7 @@ export class Renderer {
                 this._ctx = <WebGLRenderingContext>this._canvas.getContext("experimental-webgl");
             }
 
-            this._shaderProgram = <WebGLProgram>await this.shaderLoader.load("./src/shaders/triangle.glsl");
+            this._shaderProgram = <WebGLProgram>await loadShaderGL("./shaders/triangle_tMat.glsl", this._ctx);
             // initialization finished
         }
         console.log(this.currentAPI + " initialized.");
@@ -109,6 +105,7 @@ export class Renderer {
             this.ctxGL.clear(this.ctxGL.COLOR_BUFFER_BIT);
 
             this.renderQueue.forEach((renderable) => {
+                /*
                 if (this.shader?.shader instanceof WebGLProgram && this.shader?.hasTMat()) {
                     this.setPositionAttribute(this.ctxGL, renderable);
                     this.setColorAttribute(this.ctxGL, renderable);
@@ -132,6 +129,21 @@ export class Renderer {
                     this.ctxGL.useProgram(program);
                     this.ctxGL.drawArrays(this.ctxGL.TRIANGLES, 0, renderable.vertexCount);
                 }
+                */
+                this.setPositionAttribute(this.ctxGL, renderable);
+                this.setColorAttribute(this.ctxGL, renderable);
+                this.ctxGL.useProgram(program);
+
+                const translationMatrix = mat3.create();
+                mat3.translate(translationMatrix, translationMatrix, renderable.position);
+
+                // Update uniform matrix
+                this.ctxGL.uniformMatrix3fv(
+                    this.ctxGL.getUniformLocation(program, "uTranslationMatrix"),
+                    false,
+                    translationMatrix
+                );
+                this.ctxGL.drawArrays(this.ctxGL.TRIANGLES, 0, renderable.vertexCount);
             });
         }
     }

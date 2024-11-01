@@ -7,6 +7,8 @@ import { WanderAround } from "./scripts/behaviour";
 import { BorderCollision } from "./scripts/collisions";
 import { API } from "./core/render_modes";
 
+const TRIANGLES = 2000;
+
 const gcText = "Spawned Geometry: ";
 const fpsText = "FPS: ";
 const renderMode = document.getElementById("renderMode");
@@ -22,13 +24,13 @@ let framesPassed = 0;
 
 async function main() {
   let canvas = document.querySelector("canvas");
-  renderer = new Renderer(canvas, canvas?.getContext(API.WEBGL));
+  renderer = new Renderer(canvas, canvas?.getContext(API.WEBGPU));
   try {
     await renderer.init();
   } catch (err) {
     throw new Error("Failed to initialize renderer.");
   }
-  for (let i = 0; i < 5000; ++i) {
+  for (let i = 0; i < TRIANGLES; ++i) {
     let obj = spawnGameObject(rand(-0.75, 0.75), rand(-0.75, 0.75), 0.3, new Float32Array([rand(0, 1), rand(0, 1), rand(0, 1), 1]));
     obj.setBehaviourFunction(new WanderAround(obj, 0.001));
     obj.setBehaviourFunction(new BorderCollision(obj));

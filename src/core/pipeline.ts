@@ -1,19 +1,13 @@
-import { SAMPLE_SHADER } from "./shader_loader";
-
 export async function createRenderPipeline(device: GPUDevice, shaderModule?: GPUShaderModule): Promise<GPURenderPipeline> {
-    if (!shaderModule) {
-        shaderModule = device.createShaderModule({code: SAMPLE_SHADER});
-    }
-
     const pipelineDescriptor: GPURenderPipelineDescriptor = {
         label: "pipeline",
         layout: "auto", // Let WebGPU infer the pipeline layout
         vertex: {
-            module: shaderModule,
+            module: <GPUShaderModule> shaderModule,
             entryPoint: 'vs_main'
         },
         fragment: {
-            module: shaderModule,
+            module: <GPUShaderModule> shaderModule,
             entryPoint: 'fs_main',
             targets: [
                 {
