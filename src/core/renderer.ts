@@ -26,6 +26,8 @@ export class Renderer {
             // WebGPU initialization:
             if (!navigator.gpu) {
                 console.log("WebGPU not supported on this browser. Switching render mode to WebGL.");
+                this._ctx = null;
+                this.init();
             } else {
                 console.log("WebGPU support confirmed.");
                 this._adapter = <GPUAdapter>await navigator.gpu.requestAdapter();
@@ -98,7 +100,7 @@ export class Renderer {
             });
             passEncoder?.end();
             this.device.queue.submit([commandEncoder.finish()]);
-        } else {
+        } else if (this.currentAPI === "WebGL" || this.currentAPI === "Legacy WebGL") {
             // WebGL rendering:
             const program = this.glProgram;
             this.ctxGL.clearColor(0.0, 0.0, 0.0, 1.0);
