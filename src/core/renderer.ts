@@ -5,24 +5,30 @@ import { loadShaderGL, loadShaderWGPU } from "./shader_loader";
 
 export class Renderer {
     private _canvas: HTMLCanvasElement;
-    private _ctx: GPUCanvasContext | WebGL2RenderingContext | WebGLRenderingContext;
+    private _ctx: GPUCanvasContext | WebGL2RenderingContext | WebGLRenderingContext | null;
     // WGPU rendering:
-    private _adapter?: GPUAdapter;
-    private _device?: GPUDevice;
-    private _pipeline?: GPURenderPipeline;
-    private _textureFormat?: GPUTextureFormat;
+    private _adapter!: GPUAdapter | null;
+    private _device!: GPUDevice | null;
+    private _pipeline!: GPURenderPipeline | null;
+    private _textureFormat!: GPUTextureFormat | null;
     // WebGL rendering:
-    private _shaderProgram?: WebGLProgram;
+    private _shaderProgram!: WebGLProgram | null;
 
     public renderQueue: Array<Renderable> = [];
+    public isDestroyed: boolean;
 
     constructor(canvas: HTMLCanvasElement | null, renderMode: any) {
         this._canvas = <HTMLCanvasElement>canvas;
+        this._canvas.width = this._canvas.width; // Clears and resets the canvas
+        this._ctx = null; // Reset context to ensure fresh initialization
         this._ctx = renderMode;
+        this.isDestroyed = false;
     }
 
     async init() {
-        if (this._ctx instanceof GPUCanvasContext) {
+        // Reset flag
+        this.isDestroyed = false;
+        if (this._ctx! instanceof GPUCanvasContext) {
             // WebGPU initialization:
             if (!navigator.gpu) {
                 console.log("WebGPU not supported on this browser. Switching render mode to WebGL.");
@@ -54,6 +60,14 @@ export class Renderer {
                         await loadShaderWGPU("./shaders/triangle.wgsl", this._device)
                     )
                 );
+
+                if (this._ctx instanceof GPUCanvasContext) {
+                    const dpr = window.devicePixelRatio || 1;
+                    this._canvas.width = Math.floor(this._canvas.clientWidth * dpr);
+                    this._canvas.height = Math.floor(this._canvas.clientHeight * dpr);
+                } else {
+                    throw new Error("Failed to initialize WebGPU.");
+                }
             }
             // initialization finished
         } else {
@@ -65,6 +79,15 @@ export class Renderer {
                 this._ctx = <WebGLRenderingContext>this._canvas.getContext("experimental-webgl");
             }
 
+            if (this._ctx instanceof WebGLRenderingContext || this._ctx instanceof WebGL2RenderingContext) {
+                const dpr = window.devicePixelRatio || 1;
+                this._canvas.width = Math.floor(this._canvas.clientWidth * dpr);
+                this._canvas.height = Math.floor(this._canvas.clientHeight * dpr);
+                this._ctx.viewport(0, 0, this._canvas.width, this._canvas.height);
+            } else {
+                throw new Error("Failed to initialize WebGL.");
+            }
+
             this._shaderProgram = <WebGLProgram>await loadShaderGL("./shaders/triangle_tMat.glsl", this._ctx);
             // initialization finished
         }
@@ -72,6 +95,7 @@ export class Renderer {
     }
 
     render() {
+        if (!this.ctx) return; // Prevent crashes
         // WebGPU rendering:
         if (this.currentAPI === "WebGPU") {
             const renderPassDescriptor = <GPURenderPassDescriptor>{
@@ -90,6 +114,7 @@ export class Renderer {
             passEncoder?.setPipeline(<GPURenderPipeline>this._pipeline);
 
             this.renderQueue.forEach((renderable) => {
+                if (this.isDestroyed) return; // Ensure we don't proceed if switching API mid-frame
                 renderable.updateBuffers(this);
                 passEncoder.setVertexBuffer(0, renderable.vertexBuffer!);
                 passEncoder.setVertexBuffer(1, renderable.colorBuffer!);
@@ -100,11 +125,15 @@ export class Renderer {
             this.device.queue.submit([commandEncoder.finish()]);
         } else {
             // WebGL rendering:
+
+            if (!this.ctxGL) return; // Prevent crashes
+
             const program = this.glProgram;
             this.ctxGL.clearColor(0.0, 0.0, 0.0, 1.0);
             this.ctxGL.clear(this.ctxGL.COLOR_BUFFER_BIT);
 
             this.renderQueue.forEach((renderable) => {
+                if (this.isDestroyed) return;
                 /*
                 if (this.shader?.shader instanceof WebGLProgram && this.shader?.hasTMat()) {
                     this.setPositionAttribute(this.ctxGL, renderable);
@@ -223,5 +252,35 @@ export class Renderer {
 
     get glProgram() {
         return <WebGLProgram>this._shaderProgram;
+    }
+
+    destroy() {
+        console.log("Destroying renderer...");
+        this.isDestroyed = true; // Prevent further rendering
+
+        if (!this._ctx) {
+            console.warn("Renderer already destroyed!");
+            return;
+        }
+
+        this.renderQueue.length = 0; // Clear render queue
+
+        if (this._ctx instanceof GPUCanvasContext) {
+            console.log("Cleaning up WebGPU resources...");
+            this._pipeline = null;
+            this._textureFormat = null;
+            this._device = null;
+            this._adapter = null;
+        } else if (this._ctx instanceof WebGLRenderingContext || this._ctx instanceof WebGL2RenderingContext) {
+            console.log("Cleaning up WebGL resources...");
+            if (this._shaderProgram) {
+                this._ctx.deleteProgram(this._shaderProgram);
+                this._shaderProgram = null;
+            }
+        }
+
+        // Reset canvas state
+        this._canvas.width = this._canvas.width; // Clears and resets the canvas
+        this._ctx = null;
     }
 }
