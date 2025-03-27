@@ -176,6 +176,8 @@ export class Renderer {
                 );
                 this.ctxGL.drawArrays(this.ctxGL.TRIANGLES, 0, renderable.vertexCount);
             });
+        } else {
+            // TODO: implement software rendering
         }
     }
 
