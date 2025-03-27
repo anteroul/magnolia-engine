@@ -1,5 +1,5 @@
 export enum API {
     WEBGL = "webgl2",
     WEBGPU = "webgpu",
-    SOFTWARE = "none"
+    SOFTWARE = "2d" // TODO
 };

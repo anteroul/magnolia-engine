@@ -1,0 +1,1 @@
+export const DEFAULT_TRIANGLES = 8192;

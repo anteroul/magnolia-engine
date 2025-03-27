@@ -1,3 +1,8 @@
+@font-face {
+  font-family: 'technoid'; /*a name to be used later*/
+  src: url('./fonts/TECHNOID.TTF'); /*URL to font*/
+}
+
 html, body {
   background-color: black;
   margin: 0; /* remove the default margin */
@@ -12,13 +17,45 @@ p {
   font-weight: bolder;
   font-size: clamp(12px, 1vw, 12px);
   display: flex;
-  padding-inline-start: 20%;
+  padding-inline-start: 10%;
   padding-inline-end: 20%;
+}
+
+.perfInfo {
+  padding-top: clamp(12px, 1vw, 12px);
+  padding-bottom: clamp(12px, 1vw, 12px);
 }
 
 .controls {
   color: white;
+  display: flex;
   flex-direction: column;
+  padding-inline-start: 10%;
+}
+
+.magnolia-banner {
+  padding-inline-start: 5%;
+  padding-top: 1vw;
+}
+
+.magnolia-banner h1 {
+  letter-spacing: 2px;
+  font-family: 'technoid';
+  animation: rainbow 15s linear infinite;
+}
+
+.magnolia-banner h2 {
+  font-size: small;
+  font-family: monospace;
+  color: green;
+}
+
+@keyframes rainbow {
+  0% { color: lime; }
+  25% { color: yellow; }
+  50% { color: red; }
+  75% { color: yellow; }
+  100% { color: lime; }
 }
 
 #renderMode {

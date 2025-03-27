@@ -20,6 +20,32 @@
             <p id="framerate"></p>
             <p id="avgFramerate"></p>
         </div>
+
+        <div class="controls">
+            <br>
+
+            <label for="apiSelect">Graphics API:</label>
+            <select id="apiSelect">
+                <option value="webgpu">WebGPU</option>
+                <option value="webgl">WebGL</option>
+            </select>
+
+            <br>
+            
+            <div class="triangleCount">
+                <label for="geometryCount">Triangles:</label>
+                <span id="triangleCountDisplay">0</span>
+            </div>
+            <input type="range" id="geometryCount" min="1024" max="65536" step="1024" value="16384">
+            <button id="applySettings">Apply</button>
+
+            <br>
+        </div>
+        <div class="magnolia-banner">
+            <h1>Magnolia Benchmark</h1>
+            <h2>Author: Uljas Antero Lindell</h2>
+            <h2>v0.4.1</h2>
+        </div>
     </div>
     <canvas width="1280" height="720"></canvas>
     <script type="module" src="./src/app.ts"></script>

@@ -1,14 +1,11 @@
-# Magnolia WebGL/WebGPU Benchmarker v0.3.5
+# Magnolia WebGL/WebGPU Benchmarker v0.4.1
 ### Browser based WebGL/WebGPU benchmarker written in TypeScript.
 
 ### Changes:
-- Major optimizations made for WebGPU rendering.
-- Implemented Shader class to store different types of shaders.
-- Host the tool on a github.io page or alternative on your own domain.
+- UI for changing API and amount of triangles.
 
 ### TODO:
-- UI for changing API and amount of triangles.
-- Timed benchmark-sequence, which gradually increases the amount of triangles to certain point where FPS is below 10 then changes API performing the same procedure.
+- Timed benchmark-sequence, which gradually increases the amount of triangles to certain point where FPS is below 10 then changes API performing the same procedure (optional).
 - Write a script that automatically updates benchmark-results.
 
 ### Wishlist:
