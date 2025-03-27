@@ -8,7 +8,8 @@
     "install-dependencies": "npm i",
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "gh-pages -d dist"
   },
   "author": "Antero Lindell",
   "license": "ISC",
@@ -17,5 +18,8 @@
     "gl-matrix": "^3.4.3",
     "performance-now": "^2.1.0",
     "vite": "^5.1.3"
+  },
+  "devDependencies": {
+    "gh-pages": "^6.3.0"
   }
 }
