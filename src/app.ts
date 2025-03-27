@@ -88,6 +88,7 @@ async function main() {
   try {
     await renderer.init();
   } catch (err) {
+    console.error(err);
     throw new Error("Failed to initialize renderer.");
   }
   initGeometry(DEFAULT_TRIANGLES);

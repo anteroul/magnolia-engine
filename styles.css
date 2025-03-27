@@ -1,10 +1,9 @@
 @font-face {
   font-family: "technoid";
-  src: url("/fonts/TECHNOID.TTF") format("truetype");
+  src: url("/fonts/TECHNOID.TTF") format("font/ttf");
   font-weight: normal;
   font-style: normal;
 }
-
 
 html, body {
   background-color: black;

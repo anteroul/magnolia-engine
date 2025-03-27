@@ -28,9 +28,9 @@ export class Renderer {
     async init() {
         // Reset flag
         this.isDestroyed = false;
-        if (this._ctx! instanceof GPUCanvasContext) {
+        if (navigator.gpu) {
             // WebGPU initialization:
-            if (!navigator.gpu) {
+            if (this._ctx instanceof GPUCanvasContext) {
                 console.log("WebGPU not supported on this browser. Switching render mode to WebGL.");
                 this._ctx = null;
                 this.init();
@@ -236,7 +236,7 @@ export class Renderer {
     }
 
     get currentAPI() {
-        if (this._ctx instanceof GPUCanvasContext)
+        if (navigator.gpu && this._ctx instanceof GPUCanvasContext)
             return "WebGPU";
         else if (this._ctx instanceof WebGL2RenderingContext)
             return "WebGL";
@@ -269,7 +269,7 @@ export class Renderer {
 
         this.renderQueue.length = 0; // Clear render queue
 
-        if (this._ctx instanceof GPUCanvasContext) {
+        if (navigator.gpu && this._ctx instanceof GPUCanvasContext) {
             console.log("Cleaning up WebGPU resources...");
             this._pipeline = null;
             this._textureFormat = null;
