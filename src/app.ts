@@ -83,7 +83,7 @@ function switchRenderMode(newAPI: API, triangles: number) {
 
 async function main() {
   if (!renderer) {
-    renderer = new Renderer(canvas, canvas?.getContext(API.WEBGPU));
+    renderer = new Renderer(canvas, canvas?.getContext(API.WEBGL));
   }
   try {
     await renderer.init();
