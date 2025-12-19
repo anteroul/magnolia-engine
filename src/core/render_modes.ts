@@ -3,3 +3,9 @@ export enum API {
     WEBGPU = "webgpu",
     SOFTWARE = "2d" // TODO
 };
+
+export let renderModesEnabled: Boolean = false;
+
+export function toggleRenderModeTests() {
+    return !renderModesEnabled;
+}
