@@ -1,12 +1,12 @@
 # .github/workflows/bump-build-number.yml
-name: Bump build number
+name: Bump version
 
 on:
   push:
-    branches: [main]
+    branches: [main, anteroul-patch]
 
 jobs:
-  bump-build:
+  bump-version:
     if: "!contains(github.event.head_commit.message, '[skip build-bump]')"
     runs-on: ubuntu-latest
     permissions:
@@ -17,19 +17,11 @@ jobs:
           ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Bump buildNumber in package.json
-        run: |
-          node -e "
-            const fs = require('fs');
-            const pkg = JSON.parse(fs.readFileSync('package.json'));
-            pkg.buildNumber = (pkg.buildNumber || 0) + 1;
-            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
-          "
-
-      - name: Commit and push
+      - name: Bump patch version
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add package.json
-          git commit -m "chore: bump build number [skip build-bump]"
-          git push
+          npm version patch -m "chore: bump version to %s [skip build-bump]"
+
+      - name: Push changes
+        run: git push --follow-tags
