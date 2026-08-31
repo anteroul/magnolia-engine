@@ -1,6 +1,6 @@
 {
   "name": "magnolia-engine",
-  "version": "0.4.5",
+  "version": "0.4.6",
   "description": "WebGPU/WebGL rendering engine",
   "main": "app.ts",
   "scripts": {
