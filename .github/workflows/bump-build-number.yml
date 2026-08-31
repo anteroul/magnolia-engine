@@ -1,0 +1,27 @@
+# .github/workflows/bump-build-number.yml
+name: Bump version
+
+on:
+  push:
+    branches: [main, anteroul-patch]
+
+jobs:
+  bump-version:
+    if: "!contains(github.event.head_commit.message, '[skip build-bump]')"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Bump patch version
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          npm version patch -m "chore: bump version to %s [skip build-bump]"
+
+      - name: Push changes
+        run: git push --follow-tags
