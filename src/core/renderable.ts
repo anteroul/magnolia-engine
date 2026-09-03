@@ -1,3 +1,5 @@
+/// <reference types="@webgpu/types" />
+
 import { Renderer } from "./renderer";
 import { vec2, vec4 } from "gl-matrix";
 

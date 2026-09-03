@@ -4,6 +4,7 @@ export enum API {
     SOFTWARE = "2d" // TODO
 };
 
+export let currentAPI: API;
 export let renderModesEnabled: Boolean = false;
 
 export function toggleRenderModeTests() {
