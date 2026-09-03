@@ -16,7 +16,6 @@ jobs:
         with:
           ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Bump patch version
         run: |
           git config user.name "github-actions[bot]"
@@ -26,7 +25,7 @@ jobs:
       - name: Update README version
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          sed -i "s/Version: [0-9]*\.[0-9]*\.[0-9]*/Version: $VERSION/" README.md
+          sed -i "s/v*\[0-9]*\.[0-9]*\.[0-9]*/v*\$VERSION/" README.md
           git add package.json README.md
           git commit -m "chore: bump version to $VERSION [skip build-bump]"
 
