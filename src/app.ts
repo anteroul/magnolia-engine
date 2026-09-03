@@ -6,7 +6,6 @@ import { GameObject } from "./core/game_object";
 import { WanderAround } from "./scripts/behaviour";
 import { BorderCollision } from "./scripts/collisions";
 import { DEFAULT_TRIANGLES } from "./config";
-import { setupUI } from "./ui";
 import { API } from "./core/render_modes";
 
 const gcText = "Spawned Geometry: ";
@@ -16,7 +15,6 @@ const geometryCounter = document.getElementById("geometry");
 const fpsCounter = document.getElementById("framerate");
 const avgFramerate = document.getElementById("avgFramerate");
 
-let renderModesEnabled: Boolean = false;
 let canvas = document.querySelector("canvas");
 let renderer: Renderer | null = null;
 let objects: Array<GameObject> = [];
@@ -24,7 +22,6 @@ let prevFrame = now();
 let FPS = 0;
 let avgFPS = 0;
 let framesPassed = 0;
-let animationFrameId: number;
 let currentAPI: API = canvas?.getContext("webgpu") ? API.WEBGPU : API.WEBGL;
 
 const geometrySlider = document.getElementById("geometryCount") as HTMLInputElement;
