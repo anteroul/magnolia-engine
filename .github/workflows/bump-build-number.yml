@@ -3,7 +3,7 @@ name: Bump version
 
 on:
   push:
-    branches: [main, anteroul-patch]
+    branches: [main]
 
 jobs:
   bump-version:
@@ -21,7 +21,14 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          npm version patch -m "chore: bump version to %s [skip build-bump]"
+          npm version patch --no-git-tag-version
+
+      - name: Update README version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          sed -i "s/Version: [0-9]*\.[0-9]*\.[0-9]*/Version: $VERSION/" README.md
+          git add package.json README.md
+          git commit -m "chore: bump version to $VERSION [skip build-bump]"
 
       - name: Push changes
-        run: git push --follow-tags
+        run: git push
