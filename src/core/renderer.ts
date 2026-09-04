@@ -30,63 +30,72 @@ export class Renderer {
     }
 
     async init() {
+        // Reset flag
         this.isDestroyed = false;
-
-        if (navigator.gpu) {
+        if (this._ctx! instanceof GPUCanvasContext) {
             // WebGPU initialization:
-            this._adapter = <GPUAdapter>await navigator.gpu.requestAdapter();
-            if (!this._adapter) {
-                throw new Error("No appropriate GPU adapter found.");
+            if (!navigator.gpu) {
+                console.log("WebGPU not supported on this browser. Switching render mode to WebGL.");
+            } else {
+                console.log("WebGPU support confirmed.");
+
+                this._adapter = <GPUAdapter> await navigator?.gpu?.requestAdapter();
+
+                if (!this._adapter) {
+                    throw new Error("No appropriate GPU adapter found.");
+                }
+
+                this._ctx = <GPUCanvasContext>this._canvas.getContext("webgpu");
+
+                if (!this._ctx) {
+                    throw new Error("Failed to initialize WebGPU.");
+                }
+
+                this._textureFormat = navigator.gpu.getPreferredCanvasFormat();
+                this._device = await this._adapter.requestDevice();
+
+                this._ctx.configure({
+                    device: <GPUDevice>this._device,
+                    format: this._textureFormat,
+                });
+
+                this._pipeline = await createRenderPipeline(
+                    this._device,
+                    <GPUShaderModule>(
+                        await loadShaderWGPU("./shaders/triangle.wgsl", this._device)
+                    )
+                );
+
+                if (this._ctx instanceof GPUCanvasContext) {
+                    const dpr = window.devicePixelRatio || 1;
+                    this._canvas.width = Math.floor(this._canvas.clientWidth * dpr);
+                    this._canvas.height = Math.floor(this._canvas.clientHeight * dpr);
+                } else {
+                    throw new Error("Failed to initialize WebGPU.");
+                }
             }
-
-            this._ctx = <GPUCanvasContext> this._canvas.getContext("webgpu");
-            console.log("WebGPU support confirmed.");
-
-            this._textureFormat = navigator.gpu.getPreferredCanvasFormat();
-            this._device = await this._adapter.requestDevice();
-
-            this._ctx.configure({
-                device: this._device,
-                format: this._textureFormat,
-            });
-
-            this._pipeline = await createRenderPipeline(
-                this._device,
-                <GPUShaderModule>(
-                    await loadShaderWGPU("./shaders/triangle.wgsl", this._device)
-                )
-            );
-
-            const dpr = window.devicePixelRatio || 1;
-            this._canvas.width = Math.floor(this._canvas.clientWidth * dpr);
-            this._canvas.height = Math.floor(this._canvas.clientHeight * dpr);
             // initialization finished
         } else {
-            console.log("WebGPU not supported on this browser. Switching render mode to WebGL.");
-
             // WebGL initialization:
-            let glCtx: WebGL2RenderingContext | WebGLRenderingContext | null =
-                this._canvas.getContext("webgl2");
+            this._ctx = <WebGL2RenderingContext>this._canvas.getContext("webgl2");
 
-            if (!glCtx) {
+            if (!this._ctx) {
                 console.log("Failed to initialize WebGL2. Switching to legacy WebGL.");
-                glCtx = this._canvas.getContext("webgl");
+                this._ctx = <WebGLRenderingContext>this._canvas.getContext("experimental-webgl");
             }
 
-            if (!(glCtx instanceof WebGLRenderingContext) && !(glCtx instanceof WebGL2RenderingContext)) {
+            if (this._ctx instanceof WebGLRenderingContext || this._ctx instanceof WebGL2RenderingContext) {
+                const dpr = window.devicePixelRatio || 1;
+                this._canvas.width = Math.floor(this._canvas.clientWidth * dpr);
+                this._canvas.height = Math.floor(this._canvas.clientHeight * dpr);
+                this._ctx.viewport(0, 0, this._canvas.width, this._canvas.height);
+            } else {
                 throw new Error("Failed to initialize WebGL.");
             }
-            this._ctx = glCtx;
-
-            const dpr = window.devicePixelRatio || 1;
-            this._canvas.width = Math.floor(this._canvas.clientWidth * dpr);
-            this._canvas.height = Math.floor(this._canvas.clientHeight * dpr);
-            this._ctx.viewport(0, 0, this._canvas.width, this._canvas.height);
 
             this._shaderProgram = <WebGLProgram>await loadShaderGL("./shaders/triangle_tMat.glsl", this._ctx);
             // initialization finished
         }
-
         console.log(this.currentAPI + " initialized.");
     }
 
@@ -119,7 +128,7 @@ export class Renderer {
             });
             passEncoder?.end();
             this.device.queue.submit([commandEncoder.finish()]);
-        } else if (this.currentAPI === "WebGL" || this.currentAPI === "Legacy WebGL") {
+        } else {
             // WebGL rendering:
 
             if (!this.ctxGL) return; // Prevent crashes
@@ -170,10 +179,9 @@ export class Renderer {
                 );
                 this.ctxGL.drawArrays(this.ctxGL.TRIANGLES, 0, renderable.vertexCount);
             });
-        } else {
-            // TODO: implement software rendering
         }
     }
+
 
     private setPositionAttribute(ctx: WebGL2RenderingContext | WebGLRenderingContext, renderable: Renderable) {
         const numComponents = 2; // Number of values per vertex

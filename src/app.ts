@@ -16,7 +16,6 @@ const geometryCounter = document.getElementById("geometry");
 const fpsCounter = document.getElementById("framerate");
 const avgFramerate = document.getElementById("avgFramerate");
 
-let renderModesEnabled: Boolean = false;
 let canvas = document.querySelector("canvas");
 let renderer: Renderer | null = null;
 let objects: Array<GameObject> = [];
@@ -25,7 +24,6 @@ let FPS = 0;
 let avgFPS = 0;
 let framesPassed = 0;
 let animationFrameId: number;
-let currentAPI: API = canvas?.getContext("webgpu") ? API.WEBGPU : API.WEBGL;
 
 const geometrySlider = document.getElementById("geometryCount") as HTMLInputElement;
 const triangleDisplay = document.getElementById("triangleCountDisplay");
@@ -35,10 +33,10 @@ if (geometrySlider && triangleDisplay) {
     geometrySlider.value = DEFAULT_TRIANGLES.toString();
     triangleDisplay.textContent = geometrySlider.value;
 
-  // Update display when slider changes
-  geometrySlider.addEventListener("input", () => {
-    triangleDisplay.textContent = geometrySlider.value;
-  });
+    // Update display when slider changes
+    geometrySlider.addEventListener("input", () => {
+        triangleDisplay.textContent = geometrySlider.value;
+    });
 }
 
 setupUI((api, triangles) => {
@@ -48,6 +46,7 @@ setupUI((api, triangles) => {
   FPS = 0;
   avgFPS = 0;
   framesPassed = 0;
+  objects = [];
   switchRenderMode(api, triangles);
 });
 
@@ -119,6 +118,7 @@ function update(deltaTime: number) {
 
 function gameLoop() {
   if (!renderer || renderer.isDestroyed) return; // Stop if renderer is gone
+
   const currentFrame = now();
   const deltaTime = currentFrame - prevFrame;
   framesPassed++;
@@ -130,12 +130,13 @@ function gameLoop() {
   avgFPS += FPS;
 
   if (geometryCounter && fpsCounter && renderMode && avgFramerate) {
-    renderMode.innerHTML = "Renderer: " + renderer.currentAPI;
-    geometryCounter.innerHTML = gcText + renderer.geometryCount;
-    fpsCounter.innerHTML = fpsText + FPS.toFixed(0);
-    avgFramerate.innerHTML = "Avg FPS: " + (avgFPS / framesPassed).toFixed(0);
+      renderMode.innerHTML = "Renderer: " + renderer.currentAPI;
+      geometryCounter.innerHTML = gcText + renderer.geometryCount;
+      fpsCounter.innerHTML = fpsText + FPS.toFixed(0);
+      avgFramerate.innerHTML = "Avg FPS: " + (avgFPS / framesPassed).toFixed(0);
   }
 
+  animationFrameId = requestAnimationFrame(gameLoop);
 }
 
 export const spawnObject = (x: number, y: number, size: number, color: Float32Array) => {
