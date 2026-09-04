@@ -22,11 +22,12 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           npm version patch --no-git-tag-version
 
-      - name: Update README version
+      - name: Update README and index.html version
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          sed -i "s/v*\[0-9]*\.[0-9]*\.[0-9]*/v*\$VERSION/" README.md
-          git add package.json README.md
+          sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+/v$VERSION/" README.md
+          sed -i "s/<h2>v[0-9]\+\.[0-9]\+\.[0-9]\+<\/h2>/<h2>v$VERSION<\/h2>/" index.html
+          git add package.json README.md index.html
           git commit -m "chore: bump version to $VERSION [skip build-bump]"
 
       - name: Push changes

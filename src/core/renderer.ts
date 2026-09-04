@@ -1,6 +1,7 @@
 import { mat3 } from "gl-matrix";
 import { createRenderPipeline } from "./pipeline";
 import { Renderable } from "./renderable";
+import { API } from "./render_modes";
 import { loadShaderGL, loadShaderWGPU } from "./shader_loader";
 
 export class Renderer {
@@ -18,6 +19,9 @@ export class Renderer {
     public isDestroyed: boolean;
 
     constructor(canvas: HTMLCanvasElement | null, renderMode: any) {
+        if (renderMode === API.WEBGL) {
+            renderMode = "webgl2";
+        }
         this._canvas = <HTMLCanvasElement>canvas;
         this._canvas.width = this._canvas.width; // Clears and resets the canvas
         this._ctx = null; // Reset context to ensure fresh initialization
@@ -26,73 +30,63 @@ export class Renderer {
     }
 
     async init() {
-        // Reset flag
         this.isDestroyed = false;
+
         if (navigator.gpu) {
             // WebGPU initialization:
-            if (this._ctx instanceof GPUCanvasContext) {
-                console.log("WebGPU not supported on this browser. Switching render mode to WebGL.");
-                this._ctx = null;
-                this.init();
-            } else {
-                console.log("WebGPU support confirmed.");
-                this._adapter = <GPUAdapter>await navigator.gpu.requestAdapter();
-
-                if (!this._adapter) {
-                    throw new Error("No appropriate GPU adapter found.");
-                }
-
-                this._ctx = <GPUCanvasContext>this._canvas.getContext("webgpu");
-
-                if (!this._ctx) {
-                    throw new Error("Failed to initialize WebGPU.");
-                }
-
-                this._textureFormat = navigator.gpu.getPreferredCanvasFormat();
-                this._device = await this._adapter.requestDevice();
-
-                this._ctx.configure({
-                    device: <GPUDevice>this._device,
-                    format: this._textureFormat,
-                });
-
-                this._pipeline = await createRenderPipeline(
-                    this._device,
-                    <GPUShaderModule>(
-                        await loadShaderWGPU("./shaders/triangle.wgsl", this._device)
-                    )
-                );
-
-                if (this._ctx instanceof GPUCanvasContext) {
-                    const dpr = window.devicePixelRatio || 1;
-                    this._canvas.width = Math.floor(this._canvas.clientWidth * dpr);
-                    this._canvas.height = Math.floor(this._canvas.clientHeight * dpr);
-                } else {
-                    throw new Error("Failed to initialize WebGPU.");
-                }
+            this._adapter = <GPUAdapter>await navigator.gpu.requestAdapter();
+            if (!this._adapter) {
+                throw new Error("No appropriate GPU adapter found.");
             }
+
+            this._ctx = <GPUCanvasContext> this._canvas.getContext("webgpu");
+            console.log("WebGPU support confirmed.");
+
+            this._textureFormat = navigator.gpu.getPreferredCanvasFormat();
+            this._device = await this._adapter.requestDevice();
+
+            this._ctx.configure({
+                device: this._device,
+                format: this._textureFormat,
+            });
+
+            this._pipeline = await createRenderPipeline(
+                this._device,
+                <GPUShaderModule>(
+                    await loadShaderWGPU("./shaders/triangle.wgsl", this._device)
+                )
+            );
+
+            const dpr = window.devicePixelRatio || 1;
+            this._canvas.width = Math.floor(this._canvas.clientWidth * dpr);
+            this._canvas.height = Math.floor(this._canvas.clientHeight * dpr);
             // initialization finished
         } else {
-            // WebGL initialization:
-            this._ctx = <WebGL2RenderingContext>this._canvas.getContext("webgl2");
+            console.log("WebGPU not supported on this browser. Switching render mode to WebGL.");
 
-            if (!this._ctx) {
+            // WebGL initialization:
+            let glCtx: WebGL2RenderingContext | WebGLRenderingContext | null =
+                this._canvas.getContext("webgl2");
+
+            if (!glCtx) {
                 console.log("Failed to initialize WebGL2. Switching to legacy WebGL.");
-                this._ctx = <WebGLRenderingContext>this._canvas.getContext("experimental-webgl");
+                glCtx = this._canvas.getContext("webgl");
             }
 
-            if (this._ctx instanceof WebGLRenderingContext || this._ctx instanceof WebGL2RenderingContext) {
-                const dpr = window.devicePixelRatio || 1;
-                this._canvas.width = Math.floor(this._canvas.clientWidth * dpr);
-                this._canvas.height = Math.floor(this._canvas.clientHeight * dpr);
-                this._ctx.viewport(0, 0, this._canvas.width, this._canvas.height);
-            } else {
+            if (!(glCtx instanceof WebGLRenderingContext) && !(glCtx instanceof WebGL2RenderingContext)) {
                 throw new Error("Failed to initialize WebGL.");
             }
+            this._ctx = glCtx;
+
+            const dpr = window.devicePixelRatio || 1;
+            this._canvas.width = Math.floor(this._canvas.clientWidth * dpr);
+            this._canvas.height = Math.floor(this._canvas.clientHeight * dpr);
+            this._ctx.viewport(0, 0, this._canvas.width, this._canvas.height);
 
             this._shaderProgram = <WebGLProgram>await loadShaderGL("./shaders/triangle_tMat.glsl", this._ctx);
             // initialization finished
         }
+
         console.log(this.currentAPI + " initialized.");
     }
 
