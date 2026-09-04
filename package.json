@@ -1,6 +1,6 @@
 {
   "name": "magnolia-engine",
-  "version": "0.4.7",
+  "version": "0.4.11",
   "description": "WebGPU/WebGL rendering engine",
   "main": "app.ts",
   "scripts": {
@@ -16,6 +16,6 @@
     "@webgpu/types": "^0.1.40",
     "gl-matrix": "^3.4.3",
     "performance-now": "^2.1.0",
-    "vite": "^7.3.5"
+    "vite": "^8.2.2"
   }
 }

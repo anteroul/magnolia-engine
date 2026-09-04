@@ -16,7 +16,6 @@ jobs:
         with:
           ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Bump patch version
         run: |
           git config user.name "github-actions[bot]"
