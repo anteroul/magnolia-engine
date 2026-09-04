@@ -1,4 +1,4 @@
-# Magnolia WebGL/WebGPU Benchmarker v0.4.6
+# Magnolia WebGL/WebGPU Benchmarker v0.4.12
 ### Browser based WebGL/WebGPU benchmarker written in TypeScript.
 
 ### Changes:
