@@ -1,4 +1,3 @@
-import { API } from "./core/render_modes";
+let triangles = parseInt(<string> document.getElementById("geometryCount")?.getAttribute("min")?.valueOf());
 
-export const DEFAULT_TRIANGLES = 8192;
-export let currentRenderMode = API.WEBGPU;
+export const DEFAULT_TRIANGLES = triangles;

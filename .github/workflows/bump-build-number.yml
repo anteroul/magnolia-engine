@@ -1,3 +1,4 @@
+# .github/workflows/bump-build-number.yml
 name: Bump version
 
 on:
@@ -25,8 +26,8 @@ jobs:
       - name: Update README and index.html version
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          sed -i "s/Version: [0-9]*\.[0-9]*\.[0-9]*/Version: $VERSION/" README.md
-          sed -i "s/<h2 id=\"version\">.*<\/h2>/<h2 id=\"version\">v$VERSION<\/h2>/" index.html
+          sed -i "s/v[0-9]\+\.[0-9]\+\.[0-9]\+/v$VERSION/" README.md
+          sed -i "s/<h2>v[0-9]\+\.[0-9]\+\.[0-9]\+<\/h2>/<h2>v$VERSION<\/h2>/" index.html
           git add package.json README.md index.html
           git commit -m "chore: bump version to $VERSION [skip build-bump]"
 

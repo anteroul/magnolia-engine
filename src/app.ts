@@ -5,8 +5,9 @@ import { Renderable } from "./core/renderable";
 import { GameObject } from "./core/game_object";
 import { WanderAround } from "./scripts/behaviour";
 import { BorderCollision } from "./scripts/collisions";
-import { DEFAULT_TRIANGLES } from "./config";
+import { setupUI } from "./ui";
 import { API } from "./core/render_modes";
+import { DEFAULT_TRIANGLES } from "./config";
 
 const gcText = "Spawned Geometry: ";
 const fpsText = "FPS: ";
@@ -22,20 +23,31 @@ let prevFrame = now();
 let FPS = 0;
 let avgFPS = 0;
 let framesPassed = 0;
-let currentAPI: API = canvas?.getContext("webgpu") ? API.WEBGPU : API.WEBGL;
+let animationFrameId: number;
 
 const geometrySlider = document.getElementById("geometryCount") as HTMLInputElement;
 const triangleDisplay = document.getElementById("triangleCountDisplay");
 
 if (geometrySlider && triangleDisplay) {
-  // Set initial value
-  triangleDisplay.textContent = geometrySlider.value;
-
-  // Update display when slider changes
-  geometrySlider.addEventListener("input", () => {
+    // Set initial value
+    geometrySlider.value = DEFAULT_TRIANGLES.toString();
     triangleDisplay.textContent = geometrySlider.value;
-  });
+
+    // Update display when slider changes
+    geometrySlider.addEventListener("input", () => {
+        triangleDisplay.textContent = geometrySlider.value;
+    });
 }
+
+setupUI((api, triangles) => {
+  console.log("Switching to:", api.toUpperCase(), "with", triangles, "triangles");
+  renderer?.destroy();
+  prevFrame = now();
+  FPS = 0;
+  avgFPS = 0;
+  framesPassed = 0;
+  switchRenderMode(api, triangles);
+});
 
 function initGeometry(triangles: number) {
   for (let i = 0; i < triangles; ++i) {
@@ -45,11 +57,35 @@ function initGeometry(triangles: number) {
   }
 }
 
+function switchRenderMode(newAPI: API, triangles: number) {
+  if (renderer) {
+      cancelAnimationFrame(animationFrameId); // Stop render loop
+      renderer.destroy(); // Destroy current renderer
+  }
+
+  // Reset the canvas to remove previous context
+  canvas?.remove(); // Remove the old canvas
+  canvas = document.createElement("canvas"); // Create a new one
+  document.body.appendChild(canvas); // Reattach to DOM
+
+  // Request a new context based on API
+  const newContext = canvas.getContext(newAPI === API.WEBGPU ? "webgpu" : "webgl2");
+  
+  if (!newContext) {
+      console.warn(`Failed to initialize ${newAPI} context.`);
+      switchRenderMode(API.WEBGL, triangles);
+  }
+
+  renderer = new Renderer(canvas, newContext);
+  renderer.init().then(() => {
+      initGeometry(triangles);
+      gameLoop(); // Restart rendering
+  });
+}
 
 async function main() {
   if (!renderer) {
-    const context = canvas?.getContext(currentAPI === API.WEBGPU ? "webgpu" : "webgl2");
-    renderer = new Renderer(canvas, context);
+    renderer = new Renderer(canvas, canvas?.getContext("webgpu"));
   }
   try {
     await renderer.init();
@@ -81,6 +117,7 @@ function update(deltaTime: number) {
 
 function gameLoop() {
   if (!renderer || renderer.isDestroyed) return; // Stop if renderer is gone
+
   const currentFrame = now();
   const deltaTime = currentFrame - prevFrame;
   framesPassed++;
@@ -92,12 +129,13 @@ function gameLoop() {
   avgFPS += FPS;
 
   if (geometryCounter && fpsCounter && renderMode && avgFramerate) {
-    renderMode.innerHTML = "Renderer: " + renderer.currentAPI;
-    geometryCounter.innerHTML = gcText + renderer.geometryCount;
-    fpsCounter.innerHTML = fpsText + FPS.toFixed(0);
-    avgFramerate.innerHTML = "Avg FPS: " + (avgFPS / framesPassed).toFixed(0);
+      renderMode.innerHTML = "Renderer: " + renderer.currentAPI;
+      geometryCounter.innerHTML = gcText + renderer.geometryCount;
+      fpsCounter.innerHTML = fpsText + FPS.toFixed(0);
+      avgFramerate.innerHTML = "Avg FPS: " + (avgFPS / framesPassed).toFixed(0);
   }
 
+  animationFrameId = requestAnimationFrame(gameLoop);
 }
 
 export const spawnObject = (x: number, y: number, size: number, color: Float32Array) => {
