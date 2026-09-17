@@ -1,7 +1,6 @@
 import { mat3 } from "gl-matrix";
 import { createRenderPipeline } from "./pipeline";
 import { Renderable } from "./renderable";
-import { API } from "./render_modes";
 import { loadShaderGL, loadShaderWGPU } from "./shader_loader";
 
 export class Renderer {
@@ -19,9 +18,6 @@ export class Renderer {
     public isDestroyed: boolean;
 
     constructor(canvas: HTMLCanvasElement | null, renderMode: any) {
-        if (renderMode === API.WEBGL) {
-            renderMode = "webgl2";
-        }
         this._canvas = <HTMLCanvasElement>canvas;
         this._canvas.width = this._canvas.width; // Clears and resets the canvas
         this._ctx = null; // Reset context to ensure fresh initialization
@@ -35,11 +31,11 @@ export class Renderer {
         if (this._ctx! instanceof GPUCanvasContext) {
             // WebGPU initialization:
             if (!navigator.gpu) {
-                console.log("WebGPU not supported on this browser. Switching render mode to WebGL.");
+                throw new Error("WebGPU not supported on this browser. Switching render mode to WebGL.");
             } else {
                 console.log("WebGPU support confirmed.");
 
-                this._adapter = <GPUAdapter> await navigator?.gpu?.requestAdapter();
+                this._adapter = <GPUAdapter>await navigator?.gpu?.requestAdapter();
 
                 if (!this._adapter) {
                     throw new Error("No appropriate GPU adapter found.");

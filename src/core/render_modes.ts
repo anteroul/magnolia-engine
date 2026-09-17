@@ -4,11 +4,28 @@ export enum API {
     SOFTWARE = "2d" // TODO
 };
 
-const apiDropdownList = document.getElementById("apiSelect") as HTMLSelectElement;
+export const apiDropdownList = document.getElementById("apiSelect") as HTMLSelectElement;
 
-export let currentAPI: API = <API> apiDropdownList.value;
-export let renderModesEnabled: Boolean = false;
+export function setAPI_UI(api: string) {
+    switch (api) {
+        case ("Legacy WebGL"):
+            return API.WEBGL;
+        case ("WebGL"):
+            return API.WEBGL;
+        case ("WebGPU"):
+            return API.WEBGPU;
+        default:
+            break;
+    }
+    return API.SOFTWARE;
+}
 
-export function toggleRenderModeTests() {
-    return !renderModesEnabled;
+export async function canInitWebGPU(): Promise<boolean> {
+    if (!navigator.gpu) return false;
+    try {
+        const adapter = await navigator.gpu.requestAdapter();
+        return !!adapter;
+    } catch {
+        return false;
+    }
 }

@@ -21,6 +21,7 @@ p {
   display: flex;
   padding-inline-start: 10%;
   padding-inline-end: 20%;
+  flex-wrap: nowrap;
 }
 
 .perfInfo {
@@ -58,6 +59,11 @@ p {
   50% { color: red; }
   75% { color: yellow; }
   100% { color: lime; }
+}
+
+.system-info {
+  padding-inline-start: 10%;
+  padding-block-start: 1vw;
 }
 
 #renderMode {
