@@ -1,13 +1,13 @@
 import now from "performance-now";
-import { rand, detectGPUTier} from "./core/util";
+import { rand } from "./core/util";
 import { Renderer } from "./core/renderer";
 import { Renderable } from "./core/renderable";
 import { GameObject } from "./core/game_object";
 import { WanderAround } from "./scripts/behaviour";
 import { BorderCollision } from "./scripts/collisions";
-import { API, apiDropdownList, setAPI_UI, canInitWebGPU } from "./core/render_modes";
+import { API, apiDropdownList, setAPI_UI, canInitWebGPU, contextTypeFor } from "./core/render_modes";
 import { MIN_TRIANGLES, MAX_TRIANGLES } from "./config";
-import { handleSystemInfoUI, setupUI } from "./ui";
+import { setupUI } from "./ui";
 
 const gcText = "Spawned Geometry: ";
 const fpsText = "FPS: ";
@@ -15,9 +15,6 @@ const renderMode = document.getElementById("renderMode");
 const geometryCounter = document.getElementById("geometry");
 const fpsCounter = document.getElementById("framerate");
 const avgFramerate = document.getElementById("avgFramerate");
-const systemInfo = document.getElementById("system-info");
-const gpuInfo = document.getElementById("gpu-type");
-const wgpuSupport = document.getElementById("wgpu-support");
 
 let canvas = document.querySelector("canvas");
 let renderer: Renderer | null = null;
@@ -57,7 +54,7 @@ function switchRenderMode(newAPI: API, triangles: number) {
   const localCanvas = document.createElement("canvas");
   document.body.appendChild(localCanvas);
 
-  const newContext = localCanvas.getContext(newAPI === API.WEBGPU ? "webgpu" : "webgl2");
+  const newContext = localCanvas.getContext(contextTypeFor(newAPI));
   if (!newContext) {
     console.warn(`Failed to initialize ${newAPI} context.`);
     localCanvas.remove();
@@ -96,7 +93,6 @@ function switchRenderMode(newAPI: API, triangles: number) {
 }
 
 async function main() {
-  const gpu = await detectGPUTier();
   const triangleCount = MIN_TRIANGLES;
 
   if (geometrySlider && triangleDisplay) {
@@ -112,21 +108,6 @@ async function main() {
   
   const supportsWebGPU = await canInitWebGPU();
   const initialAPI = supportsWebGPU ? API.WEBGPU : API.WEBGL;
-
-  if (gpu && gpuInfo) {
-    gpuInfo.innerHTML = "GPU: " + gpu.gpu?.toUpperCase();
-    await handleSystemInfoUI(gpuInfo);
-  }
-
-  if (wgpuSupport) {
-    if (!supportsWebGPU) {
-      wgpuSupport.style.color = 'red';
-      wgpuSupport.innerHTML = "WebGPU is not supported by this browser or it has been disabled.";
-    } else {
-      wgpuSupport.style.color = 'lime';
-      wgpuSupport.innerHTML = "WebGPU support confirmed.";
-    }
-  }
 
   switchRenderMode(initialAPI, triangleCount);
 }

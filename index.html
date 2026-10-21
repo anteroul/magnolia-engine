@@ -22,15 +22,12 @@
         </div>
 
         <div class="controls">
-            <br>
-
             <label for="apiSelect">Graphics API:</label>
             <select id="apiSelect">
                 <option value="webgl">WebGL</option>
                 <option value="webgpu">WebGPU</option>
+                <option value="software">Software</option>
             </select>
-
-            <br>
 
             <div class="triangleCount">
                 <label for="geometryCount">Triangles:</label>
@@ -38,21 +35,12 @@
             </div>
             <input type="range" id="geometryCount" min="1024" max="65536" step="1024" value="16384">
             <button id="applySettings">Apply</button>
-
-            <br>
         </div>
+
         <div class="magnolia-banner">
             <h1>Magnolia Benchmark</h1>
             <h2>Author: Uljas Antero Lindell 2024</h2>
-            <h2 id="version">v0.5.2</h2>
-        </div>
-
-        <br><br><br>
-
-        <div class="system-info">
-            <p id="gpu-type"></p>
-            <p id="osInfo"></p>
-            <p id="wgpu-support"></p>
+            <h2 id="version">v0.5.3</h2>
         </div>
     </div>
     <canvas width="1280" height="720"></canvas>

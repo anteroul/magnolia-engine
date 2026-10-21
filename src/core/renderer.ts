@@ -1,18 +1,25 @@
 import { mat3 } from "gl-matrix";
-import { createRenderPipeline } from "./pipeline";
+import { createRenderPipeline, INSTANCE_FLOATS } from "./pipeline";
 import { Renderable } from "./renderable";
+import { SoftwareRasterizer } from "./software_rasterizer";
 import { loadShaderGL, loadShaderWGPU } from "./shader_loader";
 
 export class Renderer {
     private _canvas: HTMLCanvasElement;
-    private _ctx: GPUCanvasContext | WebGL2RenderingContext | WebGLRenderingContext | null;
+    private _ctx: GPUCanvasContext | WebGL2RenderingContext | WebGLRenderingContext | CanvasRenderingContext2D | null;
     // WGPU rendering:
     private _adapter!: GPUAdapter | null;
     private _device!: GPUDevice | null;
     private _pipeline!: GPURenderPipeline | null;
     private _textureFormat!: GPUTextureFormat | null;
+    private _instanceBuffer: GPUBuffer | null = null;
+    private _instanceData: Float32Array = new Float32Array(0);
+    private _renderPassDescriptor!: GPURenderPassDescriptor;
+    private _colorAttachment!: GPURenderPassColorAttachment;
     // WebGL rendering:
     private _shaderProgram!: WebGLProgram | null;
+    // Software rendering:
+    private _rasterizer: SoftwareRasterizer | null = null;
 
     public renderQueue: Array<Renderable> = [];
     public isDestroyed: boolean;
@@ -57,10 +64,20 @@ export class Renderer {
 
                 this._pipeline = await createRenderPipeline(
                     this._device,
+                    this._textureFormat,
                     <GPUShaderModule>(
-                        await loadShaderWGPU("./shaders/triangle.wgsl", this._device)
+                        await loadShaderWGPU("./shaders/triangle_instanced.wgsl", this._device)
                     )
                 );
+
+                // Reused every frame; only the view changes
+                this._colorAttachment = {
+                    view: <GPUTextureView><unknown>null,
+                    loadOp: "clear",
+                    storeOp: "store",
+                    clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
+                };
+                this._renderPassDescriptor = { colorAttachments: [this._colorAttachment] };
 
                 if (this._ctx instanceof GPUCanvasContext) {
                     const dpr = window.devicePixelRatio || 1;
@@ -70,6 +87,13 @@ export class Renderer {
                     throw new Error("Failed to initialize WebGPU.");
                 }
             }
+            // initialization finished
+        } else if (this._ctx instanceof CanvasRenderingContext2D) {
+            // Software initialization:
+            const dpr = window.devicePixelRatio || 1;
+            this._canvas.width = Math.floor(this._canvas.clientWidth * dpr);
+            this._canvas.height = Math.floor(this._canvas.clientHeight * dpr);
+            this._rasterizer = new SoftwareRasterizer(this._ctx, this._canvas.width, this._canvas.height);
             // initialization finished
         } else {
             // WebGL initialization:
@@ -97,33 +121,11 @@ export class Renderer {
 
     render() {
         if (!this.ctx) return; // Prevent crashes
-        // WebGPU rendering:
-        if (this.currentAPI === "WebGPU") {
-            const renderPassDescriptor = <GPURenderPassDescriptor>{
-                colorAttachments: [
-                    {
-                        view: this.ctx.getCurrentTexture().createView(),
-                        loadOp: "clear",
-                        storeOp: "store",
-                        clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
-                    },
-                ],
-            };
-
-            const commandEncoder = this.device.createCommandEncoder();
-            const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
-            passEncoder?.setPipeline(<GPURenderPipeline>this._pipeline);
-
-            this.renderQueue.forEach((renderable) => {
-                if (this.isDestroyed) return; // Ensure we don't proceed if switching API mid-frame
-                renderable.updateBuffers(this);
-                passEncoder.setVertexBuffer(0, renderable.vertexBuffer!);
-                passEncoder.setVertexBuffer(1, renderable.colorBuffer!);
-                passEncoder.setBindGroup(0, renderable.bindGroup!);
-                passEncoder?.draw(renderable.vertexCount, 1, 0, 0);
-            });
-            passEncoder?.end();
-            this.device.queue.submit([commandEncoder.finish()]);
+        const api = this.currentAPI;
+        if (api === "WebGPU") {
+            this.renderWebGPU();
+        } else if (api === "Software") {
+            this.renderSoftware();
         } else {
             // WebGL rendering:
 
@@ -178,6 +180,72 @@ export class Renderer {
         }
     }
 
+
+    // All triangles are drawn with a single instanced draw call
+    private renderWebGPU() {
+        const count = this.renderQueue.length;
+        this.ensureInstanceCapacity(count);
+
+        const data = this._instanceData;
+        for (let i = 0; i < count; i++) {
+            const renderable = this.renderQueue[i];
+            const pos = renderable.position;
+            const scale = renderable.scale;
+            const color = renderable.color;
+            const o = i * INSTANCE_FLOATS;
+            data[o] = pos[0];
+            data[o + 1] = pos[1];
+            data[o + 2] = scale[0];
+            data[o + 3] = scale[1];
+            data[o + 4] = color[0];
+            data[o + 5] = color[1];
+            data[o + 6] = color[2];
+            data[o + 7] = color[3];
+        }
+
+        const device = this.device;
+        if (count > 0) {
+            device.queue.writeBuffer(<GPUBuffer>this._instanceBuffer, 0, data, 0, count * INSTANCE_FLOATS);
+        }
+
+        this._colorAttachment.view = this.ctx.getCurrentTexture().createView();
+        const commandEncoder = device.createCommandEncoder();
+        const passEncoder = commandEncoder.beginRenderPass(this._renderPassDescriptor);
+        if (count > 0) {
+            passEncoder.setPipeline(<GPURenderPipeline>this._pipeline);
+            passEncoder.setVertexBuffer(0, this._instanceBuffer);
+            passEncoder.draw(3, count, 0, 0);
+        }
+        passEncoder.end();
+        device.queue.submit([commandEncoder.finish()]);
+    }
+
+    // Grows the instance buffer to the next power of two when the queue outgrows it
+    private ensureInstanceCapacity(count: number) {
+        const needed = Math.max(count, 1) * INSTANCE_FLOATS;
+        if (this._instanceBuffer && this._instanceData.length >= needed) return;
+
+        let capacity = Math.max(this._instanceData.length, 1024 * INSTANCE_FLOATS);
+        while (capacity < needed) capacity *= 2;
+
+        this._instanceBuffer?.destroy();
+        this._instanceData = new Float32Array(capacity);
+        this._instanceBuffer = this.device.createBuffer({
+            label: "triangle instances",
+            size: this._instanceData.byteLength,
+            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+        });
+    }
+
+    private renderSoftware() {
+        const rasterizer = <SoftwareRasterizer>this._rasterizer;
+        rasterizer.clear();
+        for (let i = 0; i < this.renderQueue.length; i++) {
+            const renderable = this.renderQueue[i];
+            rasterizer.drawTriangle(renderable.position, renderable.scale, renderable.color);
+        }
+        rasterizer.present();
+    }
 
     private setPositionAttribute(ctx: WebGL2RenderingContext | WebGLRenderingContext, renderable: Renderable) {
         const numComponents = 2; // Number of values per vertex
@@ -240,6 +308,8 @@ export class Renderer {
             return "WebGL";
         else if (this._ctx instanceof WebGLRenderingContext)
             return "Legacy WebGL";
+        else if (this._ctx instanceof CanvasRenderingContext2D)
+            return "Software";
         else
             return "none";
     }
@@ -269,6 +339,9 @@ export class Renderer {
 
         if (navigator.gpu && this._ctx instanceof GPUCanvasContext) {
             console.log("Cleaning up WebGPU resources...");
+            this._instanceBuffer?.destroy();
+            this._instanceBuffer = null;
+            this._instanceData = new Float32Array(0);
             this._pipeline = null;
             this._textureFormat = null;
             this._device = null;
@@ -279,6 +352,9 @@ export class Renderer {
                 this._ctx.deleteProgram(this._shaderProgram);
                 this._shaderProgram = null;
             }
+        } else if (this._ctx instanceof CanvasRenderingContext2D) {
+            console.log("Cleaning up software renderer resources...");
+            this._rasterizer = null;
         }
 
         // Reset canvas state

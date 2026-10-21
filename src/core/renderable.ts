@@ -10,12 +10,7 @@ export class Renderable {
   private _vertexData: Float32Array;
   private _colorData: Float32Array;
 
-  // for WGPU rendering:
-  public vertexBuffer?: GPUBuffer;
-  public colorBuffer?: GPUBuffer;
-  public uniformBuffer?: GPUBuffer;
-  public bindGroup?: GPUBindGroup;
-  // for WebGL rendering:
+  // for WebGL rendering (WebGPU and software read position/scale/color directly):
   public glVertexBuffer?: WebGLBuffer;
   public glColorBuffer?: WebGLBuffer;
 
@@ -57,44 +52,8 @@ export class Renderable {
       this._color[3],
     ]);
 
-    if (handle.currentAPI === "WebGPU") {
-      this.vertexBuffer = handle.device.createBuffer({
-        size: this._vertexData.byteLength,
-        usage: GPUBufferUsage.VERTEX,
-        mappedAtCreation: true,
-      });
-      new Float32Array(this.vertexBuffer.getMappedRange()).set(
-        this._vertexData
-      );
-      this.vertexBuffer.unmap();
-
-      this.colorBuffer = handle.device.createBuffer({
-        size: this._colorData.byteLength,
-        usage: GPUBufferUsage.VERTEX,
-        mappedAtCreation: true,
-      });
-      new Float32Array(this.colorBuffer.getMappedRange()).set(this._colorData);
-      this.colorBuffer.unmap();
-
-      this.uniformBuffer = handle.device.createBuffer({
-        label: "triangle uniform",
-        size: 64,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-        mappedAtCreation: false,
-      });
-
-      this.bindGroup = handle.device.createBindGroup({
-        layout: <GPUBindGroupLayout>handle.pipeline.getBindGroupLayout(0),
-        entries: [
-          {
-            binding: 0,
-            resource: {
-              buffer: this.uniformBuffer,
-            },
-          },
-        ],
-      });
-    } else {
+    const api = handle.currentAPI;
+    if (api === "WebGL" || api === "Legacy WebGL") {
       this.glVertexBuffer = <WebGLBuffer>handle.ctxGL.createBuffer();
       handle.ctxGL.bindBuffer(handle.ctxGL.ARRAY_BUFFER, this.glVertexBuffer);
       handle.ctxGL.bufferData(
@@ -112,21 +71,6 @@ export class Renderable {
       );
     }
     this.vertexCount = this.vertexData.length / 2; // Since we are using 2D triangles
-  }
-
-  updateBuffers(handle: Renderer) {
-    if (handle.currentAPI === "WebGPU") {
-      const uniformData = new Float32Array(16);
-      uniformData.set(this._position, 0);
-      uniformData.set(this._scale, 2);
-      uniformData.set(this._color, 4);
-
-      handle.device.queue.writeBuffer(
-        this.uniformBuffer!,
-        0,
-        uniformData.buffer
-      );
-    }
   }
 
   private generateVertexData(): Float32Array {

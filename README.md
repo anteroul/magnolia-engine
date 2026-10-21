@@ -1,13 +1,11 @@
-# Magnolia WebGL/WebGPU Benchmarker v0.5.2
+# Magnolia WebGL/WebGPU Benchmarker v0.5.3
 ### Browser based WebGL/WebGPU benchmarker written in TypeScript.
 
 ### Changes:
-- Fixed bug between switching render modes.
-- Added GPU detection.
-- Improved error handling.
+- Better performance in WebGPU mode.
+- Software rendering mode.
 
 ### TODO:
-- Software Mode
 - Timed benchmark-sequence, which gradually increases the amount of triangles to certain point where FPS is below 10 then changes API performing the same procedure (optional).
 - Write a script that automatically updates benchmark-results.
 

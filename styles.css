@@ -17,31 +17,47 @@ p {
 
 .UI {
   font-weight: bolder;
-  font-size: clamp(12px, 1vw, 12px);
+  font-size: clamp(12px, 1vw, 16px);
   display: flex;
-  padding-inline-start: 10%;
-  padding-inline-end: 20%;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: clamp(12px, 3vw, 48px);
+  padding: clamp(8px, 1vw, 16px) clamp(12px, 4vw, 64px);
+  box-sizing: border-box;
+}
+
+.UI p {
+  margin: 0.4em 0;
 }
 
 .perfInfo {
-  padding-top: clamp(12px, 1vw, 12px);
-  padding-bottom: clamp(12px, 1vw, 12px);
+  flex: 0 1 auto;
+  min-width: 160px;
 }
 
 .controls {
   color: white;
   display: flex;
   flex-direction: column;
-  padding-inline-start: 10%;
+  gap: 0.5em;
+  flex: 0 1 220px;
+  min-width: 160px;
 }
 
+/* margin-left: auto pushes the banner to the right edge */
 .magnolia-banner {
-  padding-inline-start: 5%;
-  padding-top: 1vw;
+  flex: 1 1 280px;
+  margin-left: auto;
+  text-align: right;
+}
+
+.magnolia-banner h1,
+.magnolia-banner h2 {
+  margin: 0.2em 0;
 }
 
 .magnolia-banner h1 {
+  font-size: clamp(1.5rem, 4vw, 3rem);
   letter-spacing: 2px;
   font-family: 'technoid';
   animation: rainbow 15s linear infinite;
@@ -61,11 +77,6 @@ p {
   100% { color: lime; }
 }
 
-.system-info {
-  padding-inline-start: 10%;
-  padding-block-start: 1vw;
-}
-
 #renderMode {
   color: yellow;
 }
@@ -80,6 +91,19 @@ p {
 
 #avgFramerate {
   color: white;
+}
+
+@media (max-width: 640px) {
+  .perfInfo,
+  .controls,
+  .magnolia-banner {
+    flex-basis: 100%;
+  }
+
+  .magnolia-banner {
+    margin-left: 0;
+    text-align: left;
+  }
 }
 
 canvas {
