@@ -1,7 +1,9 @@
 name: Deploy to GitHub Pages
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Bump version"]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
 
@@ -12,7 +14,8 @@ permissions:
 
 jobs:
   build:
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    # 'skipped' covers commits tagged [skip build-bump]
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(fromJSON('["success","skipped"]'), github.event.workflow_run.conclusion) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
